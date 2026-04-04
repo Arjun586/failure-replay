@@ -1,0 +1,26 @@
+{
+  "name": "failure-replay",
+  "version": "1.0.0",
+  "description": "An enterprise-grade developer observability and incident management tool. This platform ingests raw backend logs, API traces, and bug reports, parses the telemetry asynchronously, and reconstructs complex system failures into visual, playable timelines for rapid root-cause analysis (RCA).",
+  "main": "index.js",
+    "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev": "concurrently -n \"client,server\" -c \"bgBlue,bgYellow\" \"npm run dev:client\" \"npm run dev:server\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arjun586/failure-replay.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Arjun586/failure-replay/issues"
+  },
+  "homepage": "https://github.com/Arjun586/failure-replay#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

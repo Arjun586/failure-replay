@@ -1,0 +1,44 @@
+[
+  {
+    "timestamp": "2026-04-05T10:00:01Z",
+    "level": "INFO",
+    "service": "api-gateway",
+    "message": "Incoming POST request to /checkout",
+    "correlationId": "req-998877"
+  },
+  {
+    "timestamp": "2026-04-05T10:00:02Z",
+    "level": "INFO",
+    "service": "auth-service",
+    "message": "User token validated successfully",
+    "correlationId": "req-998877"
+  },
+  {
+    "timestamp": "2026-04-05T10:00:03Z",
+    "level": "INFO",
+    "service": "payment-worker",
+    "message": "Initiating connection to Stripe API",
+    "correlationId": "req-998877"
+  },
+  {
+    "timestamp": "2026-04-05T10:00:15Z",
+    "level": "WARNING",
+    "service": "payment-worker",
+    "message": "Stripe API response delayed > 10s",
+    "correlationId": "req-998877"
+  },
+  {
+    "timestamp": "2026-04-05T10:00:30Z",
+    "level": "ERROR",
+    "service": "payment-worker",
+    "message": "ConnectionTimeout: Stripe API failed to respond after 30s",
+    "correlationId": "req-998877"
+  },
+  {
+    "timestamp": "2026-04-05T10:00:31Z",
+    "level": "ERROR",
+    "service": "api-gateway",
+    "message": "504 Gateway Timeout returned to client",
+    "correlationId": "req-998877"
+  }
+]
