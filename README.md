@@ -58,9 +58,15 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 - [x] Initialized Vite React client with Tailwind v3 and Framer Motion.
 - [x] Built global layout and animated sidebar (`Sidebar.tsx`).
 - [x] Initialized Express/Node.js server with TypeScript compilation.
-- [x] Set up Supabase PostgreSQL and synced initial relational database schema using Prisma v5.
-- [ ] Build Express API endpoints for Incident CRUD operations.
-- [ ] Connect React frontend to Express backend.
+- [x] Set up Supabase PostgreSQL and synced relational schema via Prisma v5.
+- [x] Created `Incident API` with strict Zod validation.
+- [x] Built live, auto-refreshing React `IncidentTable.tsx`.
+- [x] **New:** Built Multer-powered file upload middleware in Express.
+- [x] **New:** Developed Node.js parsing service to dynamically extract errors from raw JSON logs and bulk-insert `LogEvents` into Postgres.
+- [x] **New:** Created animated, Drag-and-Drop `FileUploader.tsx` in React using Framer Motion and Axios.
+- [x] **New:** Built Express Timeline API endpoint to fetch a parent incident and all associated time-sorted log events.
+- [ ] Connect React Router to navigate between Dashboard and Timeline.
+- [ ] Build the interactive Replay Timeline UI component.
 
 ## 🚀 How to Run Locally
 
