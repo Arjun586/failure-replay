@@ -50,16 +50,20 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
-        {/* Animated Login Card */}
+        
+        <div className="relative min-h-screen w-full flex items-center justify-center bg-background p-4 overflow-hidden">
+            
+            
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none z-0" />
+            
+            
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, type: 'spring', stiffness: 100 }}
-                className="relative w-full max-w-md bg-surface border border-surfaceBorder rounded-2xl shadow-xl overflow-hidden"
-                >
-                
-                {/* ADDED: Close button to return to home */}
+                className="relative z-10 w-full max-w-md bg-surface border border-surfaceBorder rounded-2xl shadow-xl overflow-hidden"
+            >
+                {/* Close button to return to home */}
                 <Link 
                     to="/" 
                     className="absolute top-4 right-4 p-2 text-muted hover:text-gray-200 transition-colors rounded-full hover:bg-surfaceBorder/50"
@@ -71,9 +75,13 @@ export default function Login() {
                 <div className="p-8">
                     {/* Logo / Branding */}
                     <div className="flex flex-col items-center mb-8">
-                        <div className="w-12 h-12 bg-primary/20 text-primary rounded-xl flex items-center justify-center mb-4">
+                        <motion.div 
+                            animate={{ y: [-2, 2, -2] }} 
+                            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} 
+                            className="w-12 h-12 bg-primary/20 text-primary rounded-xl flex items-center justify-center mb-4 shadow-[0_0_15px_rgb(var(--primary)/0.2)]"
+                        >
                             <TerminalSquare size={28} />
-                        </div>
+                        </motion.div>
                         <h1 className="text-2xl font-bold text-gray-100">Welcome Back</h1>
                         <p className="text-muted text-sm mt-1">Sign in to Failure Replay</p>
                     </div>
@@ -92,7 +100,7 @@ export default function Login() {
 
                     {/* Login Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        <div>
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                             <label className="block text-sm font-medium text-gray-300 mb-1.5">Email Address</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -103,40 +111,42 @@ export default function Login() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="w-full bg-[#18181b] border border-surfaceBorder text-gray-200 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                                    className="w-full bg-[#18181b] border border-surfaceBorder text-gray-200 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/20 hover:border-primary/50 transition-all duration-300"
                                     placeholder="engineer@company.com"
                                 />
                             </div>
-                        </div>
+                        </motion.div>
 
-                    <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock size={18} className="text-muted" />
-                        </div>
-                        <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="w-full bg-[#18181b] border border-surfaceBorder text-gray-200 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                        placeholder="••••••••"
-                        />
-                    </div>
-                    </div>
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                            <label className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Lock size={18} className="text-muted" />
+                                </div>
+                                <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="w-full bg-[#18181b] border border-surfaceBorder text-gray-200 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/20 hover:border-primary/50 transition-all duration-300"
+                                placeholder="••••••••"
+                                />
+                            </div>
+                        </motion.div>
 
-                    <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-primary hover:bg-primary-hover text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
-                    >
-                    {isLoading ? (
-                        <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                        'Sign In'
-                    )}
-                    </button>
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                            <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgb(var(--primary)/0.4)] hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+                            >
+                            {isLoading ? (
+                                <Loader2 size={18} className="animate-spin" />
+                            ) : (
+                                'Sign In'
+                            )}
+                            </button>
+                        </motion.div>
                     </form>
                 </div>
 
