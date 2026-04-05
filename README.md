@@ -72,6 +72,10 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 - [x] **Phase 2 Complete:** Implemented secure JWT-based authentication with bcrypt password hashing and global Axios interceptors.
 - [x] **Phase 2 Complete:** Built strict Role-Based Access Control (RBAC) middleware for Express.
 - [x] **Phase 2 Complete:** Built premium Login, Registration, and React Router `ProtectedRoute` wrappers using Framer Motion.
+- [x] **Phase 3 Complete:** Organization Admin Flow allowing Admins to create and manage isolated Projects via `CreateProjectModal`.
+- [x] **Phase 3 Complete:** Context-Aware Navigation with a dynamic Project switcher in the Sidebar, automatically routing users back to the dashboard upon switch.
+- [x] **Phase 3 Complete:** Project-Level Isolation ensuring that uploaded log files and fetched incidents are securely scoped to the active project query parameter.
+- [x] **Phase 3 Complete:** User Identity UI with active role badges (`ADMIN` / `MEMBER`) and dynamic feature gating (hiding creation tools from non-admins).
 
 ---
 
@@ -80,10 +84,10 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 This project is continually evolving from a single-user MVP into a fully-fledged enterprise SaaS product. Here is the exact roadmap for upcoming features and architectural upgrades:
 
 ### Phase 3: Organization Management & Employee Onboarding (In Progress)
-- [ ] **Organization Admin Flow:** Allow Organization Admins to create and manage strictly isolated `Projects`.
-- [ ] **Employee Invitation System:** Build a secure email-invitation flow for onboarding new engineers into specific Organizations.
-- [ ] **Context-Aware Navigation:** Implement an Organization/Project switcher in the UI to dynamically scope dashboards, log uploads, and timelines.
-- [ ] **Project-Level Isolation:** Ensure that employees only see dashboards and incidents for `Projects` they have explicitly been granted access to.
+- [x] **Organization Admin Flow:** Allow Organization Admins to create and manage strictly isolated `Projects`.
+- [x] **Context-Aware Navigation:** Implement an Organization/Project switcher in the UI to dynamically scope dashboards, log uploads, and timelines.
+- [x] **Project-Level Isolation:** Ensure that employees only see dashboards and incidents for `Projects` they have explicitly been granted access to.
+- [ ] **Employee Invitation System:** Finish the secure backend flow for onboarding new engineers into specific Organizations via generated invitation links.
 
 ### Phase 4: Observability & Distributed Tracing
 - [ ] **OpenTelemetry Integration:** Ingest standardized OTLP traces alongside raw logs.
