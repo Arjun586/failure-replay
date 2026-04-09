@@ -85,7 +85,7 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 - [x] Employee Invitation System with secure backend token generation, UI modals, and one-time link redemption.
 
 
-### Phase 4: Observability & Distributed Tracing (Up Next)
+### Phase 4: Observability & Distributed Tracing
 - [x] **OpenTelemetry Integration:** Ingest standardized OTLP traces alongside raw logs.
 - [x] **Trace Correlation:** Automatically map individual log events to their parent request traces across microservices.
 - [x] **Service Dependency Graphs:** Visualize which microservice triggered upstream failures.
