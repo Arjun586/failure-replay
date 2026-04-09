@@ -88,23 +88,41 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 ### Phase 4: Observability & Distributed Tracing (Up Next)
 - [x] **OpenTelemetry Integration:** Ingest standardized OTLP traces alongside raw logs.
 - [x] **Trace Correlation:** Automatically map individual log events to their parent request traces across microservices.
+- [x] **Service Dependency Graphs:** Visualize which microservice triggered upstream failures.
 ---
+
+
 
 ## 🗺️ Roadmap & Future Scope
 
 This project is continually evolving from a single-user MVP into a fully-fledged enterprise SaaS product. Here is the exact roadmap for upcoming features and architectural upgrades:
 
-### Phase 4: Observability & Distributed Tracing (Up Next)
-- [ ] **Service Dependency Graphs:** Visualize which microservice triggered upstream failures.
 
-### Phase 5: Automated Intelligence
-- [ ] **Incident Clustering:** Use error signature hashes (service + route + status) to group similar incoming logs into existing incidents, preventing alert fatigue.
-- [ ] **AI-Assisted Root Cause Analysis:** Integrate an LLM (via OpenAI/Anthropic API) to analyze raw log arrays and suggest probable root cause hypotheses inside the postmortem modal.
 
-### Phase 6: Enterprise Scalability
+### Phase 4.5: Developer Experience (DX) & UI Polish (In Progress)
+- [ ] **Interactive Onboarding & Setup Guide:** Develop a new SetupGuide.tsx component to provide users with step-by-step integration instructions featuring their unique Ingest URL and Project ID. Provide pre-configured code snippets for Node.js and Python to enable SDK connection in under 2 minutes.
+
+- [ ] **Advanced Sidebar Command Center:** Dynamic Project Switcher: A dropdown at the top of the sidebar for seamless navigation between multiple isolated projects.Service Health Overview: A global status indicator to monitor the real-time health (Up/Down) of every connected microservice.
+
+- [ ] **Interactive Trace Exploration:** Span Metadata Inspector: A slide-over panel triggered by clicking a span in the Waterfall view to display raw tags, metadata, and high-precision timestamps. Deep Linking (Waterfall to Logs): Automatic page scrolling and highlighting of specific log events when a corresponding span is selected in the trace view.
+
+- [ ] **Live Traffic Feed:** A "Live Mode" dashboard toggle that utilizes optimized periodic polling to display incoming incidents and traces without requiring a manual refresh.
+
+- [ ] **Enhanced Search & Filtering:** Implementation of multi-factor filtering in the IncidentTable.tsx based on Severity (Critical/Warning) and Service Name
+
+- [ ] **Visual Polishing:** Global integration of Skeleton Loaders to prevent UI "jumps" and layout shifts during the retrieval of heavy trace and log data
+
+
+
+### Phase 5: Enterprise Scalability
 - [ ] **Background Workers:** Move the `parseLogFile` service out of the Express request cycle and into a Redis-backed BullMQ worker queue to handle 100MB+ files without blocking the API.
 - [ ] **S3 Object Storage:** Migrate raw log file storage from the local disk to an S3-compatible cloud bucket (e.g., AWS S3 or Cloudflare R2).
 - [ ] **Full-Text Search:** Implement PostgreSQL `tsvector` indexing or Elasticsearch for rapid log querying across millions of events.
+
+### Phase 6: Automated Intelligence
+- [ ] **Incident Clustering:** Use error signature hashes (service + route + status) to group similar incoming logs into existing incidents, preventing alert fatigue.
+- [ ] **AI-Assisted Root Cause Analysis:** Integrate an LLM (via OpenAI/Anthropic API) to analyze raw log arrays and suggest probable root cause hypotheses inside the postmortem modal.
+
 
 ---
 

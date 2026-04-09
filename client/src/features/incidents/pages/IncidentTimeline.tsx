@@ -7,6 +7,7 @@ import { ArrowLeft, AlertCircle, Info, AlertTriangle, FileTerminal, FileText, Se
 import PostmortemModal from '../components/PostmortemModal';
 import { useTimeline } from '../hooks/useTimeline';
 import TraceGraph from "../components/TraceGraph";
+import SpanWaterfall from '../components/SpanWaterfall';
 
 export default function IncidentTimeline() {
     const { id } = useParams<{ id: string }>();
@@ -86,10 +87,10 @@ export default function IncidentTimeline() {
                 events={incident.events}
             />
 
-            {/* NEW: Render Trace Graph if we have a traceId */}
             {primaryTraceId && (
-                <div className="mb-10">
+                <div className="mb-10 space-y-6">
                     <TraceGraph traceId={primaryTraceId} />
+                    <SpanWaterfall traceId={primaryTraceId} />
                 </div>
             )}
 

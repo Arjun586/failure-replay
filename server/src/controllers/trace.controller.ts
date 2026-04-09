@@ -1,55 +1,54 @@
 // Handle trace ingestion and retrieval endpoints
-import type { Request, Response } from "express"
-import { z } from "zod"
-import { prisma } from "../lib/prisma"
-import { ingestTraceSchema } from "../validations/trace.schema"
-import { ingestTrace } from "../services/trace.service"
-import { OTLPTraceExportSchema } from "../validations/trace.schema"
+import type { Request, Response } from "express";
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
+import { ingestTraceSchema, OTLPTraceExportSchema } from "../validations/trace.schema";
+import { ingestTrace } from "../services/trace.service";
 
 export const createTrace = async (req: Request, res: Response): Promise<void> => {
     try {
-        const validatedData = ingestTraceSchema.parse(req.body)
-        const trace = await ingestTrace(validatedData)
+        const validatedData = ingestTraceSchema.parse(req.body);
+        const trace = await ingestTrace(validatedData);
 
         res.status(201).json({
             success: true,
             data: trace
-        })
+        });
     } catch (error) {
         if (error instanceof z.ZodError) {
             res.status(400).json({
                 success: false,
                 errors: error.issues
-            })
-            return
+            });
+            return;
         }
 
         if (error instanceof Error && error.message === "Project not found") {
             res.status(404).json({
                 success: false,
                 message: error.message
-            })
-            return
+            });
+            return;
         }
 
-        console.error("Error ingesting trace:", error)
+        console.error("Error ingesting trace:", error);
         res.status(500).json({
             success: false,
             message: "Internal server error"
-        })
+        });
     }
-}
+};
 
 export const getProjectTraces = async (req: Request, res: Response): Promise<void> => {
     try {
-        const projectId = req.query.projectId
+        const projectId = req.query.projectId;
 
         if (!projectId || typeof projectId !== "string") {
             res.status(400).json({
                 success: false,
                 message: "projectId is required"
-            })
-            return
+            });
+            return;
         }
 
         const traces = await prisma.trace.findMany({
@@ -60,106 +59,91 @@ export const getProjectTraces = async (req: Request, res: Response): Promise<voi
                 }
             },
             orderBy: { startedAt: "desc" }
-        })
+        });
 
         res.status(200).json({
             success: true,
             data: traces
-        })
+        });
     } catch (error) {
-        console.error("Error fetching traces:", error)
+        console.error("Error fetching traces:", error);
         res.status(500).json({
             success: false,
             message: "Internal server error"
-        })
+        });
     }
-}
+};
 
 export const getTraceById = async (req: Request, res: Response): Promise<void> => {
     try {
-        const traceId = req.params.traceId
+        const { traceId } = req.params;
 
-        if (!traceId || typeof traceId !== "string") {
-            res.status(400).json({
-                success: false,
-                message: "traceId is required"
-            })
-            return
-        }
-
-        const trace = await prisma.trace.findUnique({
-            where: { traceId },
+        const trace = await prisma.trace.findFirst({
+            where: {
+                OR: [
+                    { id: traceId },
+                    { traceId: traceId }
+                ]
+            },
             include: {
-                spans: {
-                    orderBy: { startTime: "asc" }
-                },
-                logEvents: {
-                    orderBy: { timestamp: "asc" }
-                }
+                spans: { orderBy: { startTime: "asc" } },
+                logEvents: { orderBy: { timestamp: "asc" } }
             }
-        })
+        });
 
         if (!trace) {
-            res.status(404).json({
-                success: false,
-                message: "Trace not found"
-            })
-            return
+            res.status(404).json({ success: false, message: "Trace not found" });
+            return;
         }
 
-        res.status(200).json({
-            success: true,
-            data: trace
-        })
+        res.status(200).json({ success: true, data: trace });
     } catch (error) {
-        console.error("Error fetching trace:", error)
-        res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        })
+        console.error("Error fetching trace by ID:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
-}
-
+};
 
 // Generate a service dependency graph from trace spans
 export const getTraceGraph = async (req: Request, res: Response): Promise<void> => {
     try {
-        const traceId = req.params.traceId
+        const { traceId } = req.params;
 
-        if (!traceId || typeof traceId !== "string") {
-            res.status(400).json({
-                success: false,
-                message: "traceId is required"
-            })
-            return
+        if (!traceId) {
+            res.status(400).json({ success: false, message: "traceId is required" });
+            return;
         }
 
-        const trace = await prisma.trace.findUnique({
-            where: { traceId },
+        const trace = await prisma.trace.findFirst({
+            where: {
+                OR: [
+                    { id: traceId },      // Internal UUID
+                    { traceId: traceId }  // Custom string generated by simulation 
+                ]
+            },
             include: {
                 spans: {
                     orderBy: { startTime: "asc" }
                 }
             }
-        })
+        });
 
         if (!trace || trace.spans.length === 0) {
             res.status(404).json({
                 success: false,
                 message: "Trace not found or contains no spans"
-            })
-            return
+            });
+            return;
         }
 
         // Build Nodes and Edges for the Graph
-        const nodes = new Map<string, { id: string; service: string; hasError: boolean; duration: number }>()
-        const edges = new Map<string, { source: string; target: string; calls: number }>()
+        const nodes = new Map<string, { id: string; service: string; hasError: boolean; duration: number }>();
+        const edges = new Map<string, { source: string; target: string; calls: number }>();
 
         // Keep track of which service a span belongs to
-        const spanServiceMap = new Map<string, string>()
+        const spanServiceMap = new Map<string, string>();
         
         trace.spans.forEach(span => {
-            spanServiceMap.set(span.spanId, span.serviceName)
+            spanServiceMap.set(span.spanId, span.serviceName);
             
             if (!nodes.has(span.serviceName)) {
                 nodes.set(span.serviceName, {
@@ -167,38 +151,38 @@ export const getTraceGraph = async (req: Request, res: Response): Promise<void> 
                     service: span.serviceName,
                     hasError: false,
                     duration: 0
-                })
+                });
             }
             
-            const node = nodes.get(span.serviceName)!
+            const node = nodes.get(span.serviceName)!;
             // Aggregate duration and error state at service level
-            node.duration += span.durationMs || 0
+            node.duration += span.durationMs || 0;
             if (span.status === "ERROR" || span.errorMessage) {
-                node.hasError = true
+                node.hasError = true;
             }
-        })
+        });
 
         // Build edges based on parent-child relationships
         trace.spans.forEach(span => {
             if (span.parentSpanId && spanServiceMap.has(span.parentSpanId)) {
-                const parentService = spanServiceMap.get(span.parentSpanId)!
+                const parentService = spanServiceMap.get(span.parentSpanId)!;
                 
                 // Only create edge if it's cross-service
                 if (parentService !== span.serviceName) {
-                    const edgeId = `${parentService}->${span.serviceName}`
+                    const edgeId = `${parentService}->${span.serviceName}`;
                     
                     if (!edges.has(edgeId)) {
                         edges.set(edgeId, {
                             source: parentService,
                             target: span.serviceName,
                             calls: 0
-                        })
+                        });
                     }
                     
-                    edges.get(edgeId)!.calls += 1
+                    edges.get(edgeId)!.calls += 1;
                 }
             }
-        })
+        });
 
         res.status(200).json({
             success: true,
@@ -206,17 +190,16 @@ export const getTraceGraph = async (req: Request, res: Response): Promise<void> 
                 nodes: Array.from(nodes.values()),
                 edges: Array.from(edges.values())
             }
-        })
+        });
 
     } catch (error) {
-        console.error("Error generating trace graph:", error)
+        console.error("Error generating trace graph:", error);
         res.status(500).json({
             success: false,
             message: "Internal server error"
-        })
+        });
     }
-}
-
+};
 
 export const ingestOTLPTraces = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -238,7 +221,8 @@ export const ingestOTLPTraces = async (req: Request, res: Response): Promise<voi
         for (const resourceSpan of parsedData.resourceSpans) {
             // Extract Service Name from Resource Attributes
             let serviceName = "unknown-service";
-            const serviceAttr = resourceSpan.resource?.attributes.find(a => a.key === "service.name");
+            const serviceAttr = resourceSpan.resource?.attributes.find((a: any) => a.key === "service.name");
+            
             if (serviceAttr?.value?.stringValue) {
                 serviceName = serviceAttr.value.stringValue;
             }
@@ -270,9 +254,10 @@ export const ingestOTLPTraces = async (req: Request, res: Response): Promise<voi
                         // Update trace status to ERROR if any child span fails
                         const existingTrace = tracesMap.get(span.traceId);
                         if (isError) existingTrace.status = "ERROR";
+                        
                         // Update end time if this span finished later
                         if (endTime > existingTrace.endedAt) existingTrace.endedAt = endTime;
-                        
+
                         // If we finally found the root span, update root details
                         if (!span.parentSpanId) {
                             existingTrace.rootService = serviceName;
@@ -313,7 +298,7 @@ export const ingestOTLPTraces = async (req: Request, res: Response): Promise<voi
 
             // Filter spans belonging to this trace
             const childSpans = spansToInsert.filter(s => s.traceId === traceData.traceId);
-            
+
             for (const span of childSpans) {
                 await prisma.span.upsert({
                     where: { spanId: span.spanId },
@@ -334,7 +319,6 @@ export const ingestOTLPTraces = async (req: Request, res: Response): Promise<voi
         }
 
         res.status(202).json({ success: true, message: "OTLP Traces ingested successfully" });
-
     } catch (error) {
         console.error("OTLP Ingestion Error:", error);
         res.status(500).json({ success: false, message: "Failed to ingest traces" });

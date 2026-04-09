@@ -101,10 +101,14 @@ export const incidentService = {
 
 
 export const traceService = {
-    
-    
     getTraceGraph: async (traceId: string): Promise<TraceGraph> => {
-        const response = await apiClient.get(`/traces/${traceId}/graph`)
-        return response.data.data
+        const response = await apiClient.get(`/traces/${traceId}/graph`);
+        return response.data.data;
+    },
+    
+    // NEW: Fetch the full trace with ordered spans
+    getTraceDetails: async (traceId: string) => {
+        const response = await apiClient.get(`/traces/${traceId}`);
+        return response.data.data;
     }
 }
