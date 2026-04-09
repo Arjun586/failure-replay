@@ -11,13 +11,16 @@ import ProtectedRoute from '../core/components/ProtectedRoute';
 import { useAuth } from '../core/context/auth';
 import AcceptInvite from '../features/auth/pages/AcceptInvite';
 import Landing from './Landing';
-import { Activity, Loader2 } from 'lucide-react'; 
+import { Activity, Loader2, Code2, UploadCloud } from 'lucide-react'; 
 import { apiClient } from '../core/api/client';
+import SetupGuide from '../features/projects/components/SetupGuide';
 
 function Dashboard() {
     const [refreshKey, setRefreshKey] = useState(0);
     const [isSimulating, setIsSimulating] = useState(false);
     const { activeProject } = useAuth(); // Get the active project
+    const [isSetupOpen, setIsSetupOpen] = useState(false); 
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
 
     const handleSimulateTraffic = async () => {
         if (!activeProject) return;
@@ -34,22 +37,69 @@ function Dashboard() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto">
-            <header className="mb-2">
-                <h2 className="text-3xl font-bold text-gray-100 tracking-tight">Dashboard</h2>
-                <p className="text-muted mt-2">Monitor and investigate system failures in real-time.</p>
-                <button 
-                    onClick={handleSimulateTraffic}
-                    disabled={isSimulating || !activeProject}
-                    className="flex items-center gap-2 bg-glass border border-primary/50 text-primary hover:bg-primary/10 px-4 py-2.5 rounded-lg font-medium transition-all shadow-[0_0_15px_rgb(var(--primary)/0.15)] disabled:opacity-50"
-                >
-                    {isSimulating ? <Loader2 size={18} className="animate-spin" /> : <Activity size={18} />}
-                    {isSimulating ? 'Injecting Data...' : 'Simulate Mock Traffic'}
-                </button>
+        <div className="max-w-6xl mx-auto space-y-6">
+            <header className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-3xl font-bold text-gray-100 tracking-tight">Dashboard</h2>
+                    <p className="text-muted mt-2">Monitor and investigate system failures in real-time.</p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                    {/* 🚀 SETUP GUIDE BUTTON */}
+                    <button 
+                        onClick={() => setIsSetupOpen(true)}
+                        className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors border border-surfaceBorder hover:border-gray-500 bg-surface px-4 py-2.5 rounded-lg font-medium"
+                    >
+                        <Code2 size={16} className="text-primary" />
+                        Instrument App
+                    </button>
+
+                    <button 
+                        onClick={() => setIsUploadOpen(!isUploadOpen)}
+                        className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors border border-surfaceBorder hover:border-gray-500 bg-surface px-4 py-2.5 rounded-lg font-medium"
+                    >
+                        <UploadCloud size={16} />
+                        Upload
+                    </button>
+
+                    <button 
+                        onClick={handleSimulateTraffic}
+                        disabled={isSimulating || !activeProject}
+                        className="flex items-center gap-2 bg-glass border border-primary/50 text-primary hover:bg-primary/10 px-4 py-2.5 rounded-lg font-medium transition-all shadow-[0_0_15px_rgb(var(--primary)/0.15)] disabled:opacity-50"
+                    >
+                        {isSimulating ? <Loader2 size={18} className="animate-spin" /> : <Activity size={18} />}
+                        Simulate Mock Traffic
+                    </button>
+                </div>
             </header>
-            
-            <FileUploader onUploadSuccess={() => setRefreshKey(prev => prev + 1)} />
-            <IncidentTable key={refreshKey} />
+
+            {/* 🚀 RENDER SETUP MODAL */}
+            {isSetupOpen && activeProject && (
+                <SetupGuide 
+                    projectId={activeProject.id} 
+                    onClose={() => setIsSetupOpen(false)} 
+                />
+            )}
+
+            {/* Render Upload Box (tum isko bhi baad mein modal bana sakte ho) */}
+            {isUploadOpen && (
+                <div className="mb-6">
+                    <FileUploader onUploadSuccess={() => {
+                        setRefreshKey(prev => prev + 1);
+                        setIsUploadOpen(false);
+                    }} />
+                </div>
+            )}
+
+            {/* 🚀 THE TABLE ALONE */}
+            <div className="mt-4">
+                <IncidentTable 
+                    projectId={activeProject?.id}
+                    key={refreshKey} 
+                    // onDataLoad ki ab technically zaroorat nahi hai UI hide karne ke liye, 
+                    // kyunki sab buttons se control ho raha hai
+                />
+            </div>
         </div>
     );
 }

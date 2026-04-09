@@ -4,16 +4,29 @@ import { AlertCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../core/context/auth';
 import { useIncidents } from '../hooks/useIncidents'
+import { useEffect } from 'react';
 
 
+interface IncidentTableProps {
+    projectId?: string; 
+    onDataLoad?: (hasData: boolean) => void;
+}
 
-export default function IncidentTable() {
+
+export default function IncidentTable({ onDataLoad }: IncidentTableProps) {
     const { activeProject } = useAuth();
     
     const navigate = useNavigate();
 
 
     const { incidents, isLoading, error } = useIncidents(activeProject?.id); 
+
+    useEffect(() => {
+        // Sirf tab trigger karo jab initial loading complete ho jaye
+        if (!isLoading && onDataLoad) {
+            onDataLoad(incidents.length > 0);
+        }
+    }, [incidents, isLoading, onDataLoad]);
 
 
     // Helper function to color-code the severity badges
@@ -35,7 +48,13 @@ export default function IncidentTable() {
     }
 
     return (
-        <div className="w-full border border-surfaceBorder rounded-xl overflow-hidden bg-surface shadow-sm">
+        <div className="w-full">
+            {incidents.length === 0 ? (
+                <div className="p-8 text-center text-muted bg-surface/50 rounded-xl border border-surfaceBorder mt-4">
+                    No incidents yet.
+                </div>
+            ):(
+                <div className="w-full border border-surfaceBorder rounded-xl overflow-hidden bg-surface shadow-sm">
             <table className="w-full text-left text-sm">
                 <thead className="bg-surfaceBorder/30 text-muted">
                     <tr>
@@ -83,6 +102,8 @@ export default function IncidentTable() {
                     )}
                 </tbody>
             </table>
+        </div>
+            )}
         </div>
     );
 }

@@ -89,7 +89,9 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 - [x] **OpenTelemetry Integration:** Ingest standardized OTLP traces alongside raw logs.
 - [x] **Trace Correlation:** Automatically map individual log events to their parent request traces across microservices.
 - [x] **Service Dependency Graphs:** Visualize which microservice triggered upstream failures.
----
+
+### Phase 4.5: Developer Experience (DX) & UI Polish (In Progress)
+- [x] **Interactive Onboarding & Setup Guide:** Develop a new SetupGuide.tsx component to provide users with step-by-step integration instructions featuring their unique Ingest URL and Project ID. Provide pre-configured code snippets for Node.js and Python to enable SDK connection in under 2 minutes.
 
 
 
@@ -100,7 +102,6 @@ This project is continually evolving from a single-user MVP into a fully-fledged
 
 
 ### Phase 4.5: Developer Experience (DX) & UI Polish (In Progress)
-- [ ] **Interactive Onboarding & Setup Guide:** Develop a new SetupGuide.tsx component to provide users with step-by-step integration instructions featuring their unique Ingest URL and Project ID. Provide pre-configured code snippets for Node.js and Python to enable SDK connection in under 2 minutes.
 
 - [ ] **Advanced Sidebar Command Center:** Dynamic Project Switcher: A dropdown at the top of the sidebar for seamless navigation between multiple isolated projects.Service Health Overview: A global status indicator to monitor the real-time health (Up/Down) of every connected microservice.
 
