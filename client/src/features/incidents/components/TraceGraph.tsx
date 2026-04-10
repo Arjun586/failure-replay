@@ -1,98 +1,100 @@
 import React, { useEffect, useState, useRef } from "react";
-import { motion } from "framer-motion";
-import { Server, AlertCircle, Clock, Loader2, Hand, Maximize, Minimize } from "lucide-react";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { Server, AlertCircle, Clock, Loader2, Hand, Maximize, Minimize, ActivitySquare, X, ListTree, Search, MousePointer2 } from "lucide-react";
 import { traceService, type TraceGraph as TraceGraphType } from "../api/incident.service";
+import { AnimatePresence } from "framer-motion";
 
 interface TraceGraphProps {
     traceId: string;
+    onViewLogs?: (spanId: string) => void;
 }
 
-export default function TraceGraph({ traceId }: TraceGraphProps) {
+export default function TraceGraph({ traceId, onViewLogs }: TraceGraphProps) {
     const [graphData, setGraphData] = useState<TraceGraphType | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isFullscreen, setIsFullscreen] = useState(false); // Nayi state Fullscreen ke liye
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [selectedNode, setSelectedNode] = useState<any | null>(null);
+    
+    // 🚀 Infinite Canvas States
     const containerRef = useRef<HTMLDivElement>(null);
+    const scale = useMotionValue(1);
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
 
-    // Fetch data
     useEffect(() => {
         const fetchGraph = async () => {
             try {
                 setIsLoading(true);
                 const data = await traceService.getTraceGraph(traceId);
                 setGraphData(data);
-            } catch (err) {
-                console.error("Failed to load trace graph", err);
-                setError("Failed to generate dependency graph for this trace.");
+            } catch {
+                setError("Failed to generate dependency graph.");
             } finally {
                 setIsLoading(false);
             }
         };
-
         fetchGraph();
     }, [traceId]);
 
-    // Background body scroll lock jab fullscreen on ho
-    useEffect(() => {
-        if (isFullscreen) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "unset";
+    // 🚀 Magic Zoom Logic
+    const handleWheel = (e: React.WheelEvent) => {
+        e.preventDefault();
+        const zoomSpeed = 0.001;
+        const delta = -e.deltaY;
+        const newScale = Math.min(Math.max(scale.get() + delta * zoomSpeed, 0.2), 3);
+        
+        // Zoom towards cursor position
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const currentScale = scale.get();
+            const scaleRatio = newScale / currentScale;
+
+            x.set(mouseX - (mouseX - x.get()) * scaleRatio);
+            y.set(mouseY - (mouseY - y.get()) * scaleRatio);
+            scale.set(newScale);
         }
-        return () => {
-            document.body.style.overflow = "unset";
-        };
-    }, [isFullscreen]);
+    };
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-[400px] bg-surfaceBorder/10 rounded-xl border border-surfaceBorder border-dashed">
-                <Loader2 className="text-primary animate-spin mr-3" size={24} />
-                <span className="text-muted font-medium">Analyzing service dependencies...</span>
-            </div>
-        );
-    }
+    const resetView = () => {
+        animate(x, 0, { duration: 0.5 });
+        animate(y, 0, { duration: 0.5 });
+        animate(scale, 1, { duration: 0.5 });
+    };
 
-    if (error || !graphData || graphData.nodes.length === 0) {
-        return (
-            <div className="p-6 bg-surfaceBorder/10 rounded-xl border border-surfaceBorder text-center">
-                <p className="text-muted text-sm">Dependency graph unavailable for this trace.</p>
-            </div>
-        );
-    }
+    useEffect(() => {
+        if (isFullscreen || selectedNode) document.body.style.overflow = "hidden";
+        else document.body.style.overflow = "unset";
+    }, [isFullscreen, selectedNode]);
 
-    // Canvas Configuration
+    if (isLoading) return <div className="flex items-center justify-center h-[400px] bg-surfaceBorder/10 rounded-xl border border-dashed"><Loader2 className="text-primary animate-spin mr-3" /></div>;
+    if (error || !graphData) return <div className="p-6 text-center text-muted">Graph unavailable.</div>;
+
+    // Layout Constants
     const nodeWidth = 220;
     const nodeHeight = 75;
-    const levelWidth = 350; 
+    const levelWidth = 350;
+    const nodePositions = new Map<string, { x: number; y: number }>();
     
+    // Position Calculation (Same as before but simplified for readability) [cite: 1782-1809]
     const incomingEdgeCounts = new Map<string, number>();
     graphData.nodes.forEach(n => incomingEdgeCounts.set(n.id, 0));
-    graphData.edges.forEach(e => {
-        incomingEdgeCounts.set(e.target, (incomingEdgeCounts.get(e.target) || 0) + 1);
-    });
-
+    graphData.edges.forEach(e => incomingEdgeCounts.set(e.target, (incomingEdgeCounts.get(e.target) || 0) + 1));
     const roots = graphData.nodes.filter(n => incomingEdgeCounts.get(n.id) === 0);
-    const nodePositions = new Map<string, { x: number; y: number }>();
     
     let currentLevel = roots;
     let depth = 0;
-
     while (currentLevel.length > 0) {
-        const nextLevel: typeof graphData.nodes = [];
+        const nextLevel: any[] = [];
         currentLevel.forEach((node, i) => {
             if (!nodePositions.has(node.id)) {
-                nodePositions.set(node.id, {
-                    x: depth * levelWidth + 50,
-                    y: (i * (nodeHeight + 50)) + 50 
-                });
-                
-                const childrenEdges = graphData.edges.filter(e => e.source === node.id);
-                childrenEdges.forEach(edge => {
-                    const childNode = graphData.nodes.find(n => n.id === edge.target);
-                    if (childNode && !nextLevel.find(n => n.id === childNode.id)) {
-                        nextLevel.push(childNode);
-                    }
+                nodePositions.set(node.id, { x: depth * levelWidth + 100, y: i * 150 + 100 });
+                graphData.edges.filter(e => e.source === node.id).forEach(edge => {
+                    const child = graphData.nodes.find(n => n.id === edge.target);
+                    if (child) nextLevel.push(child);
                 });
             }
         });
@@ -100,138 +102,148 @@ export default function TraceGraph({ traceId }: TraceGraphProps) {
         depth++;
     }
 
-    const maxX = Math.max(...Array.from(nodePositions.values()).map(p => p.x));
-    const maxY = Math.max(...Array.from(nodePositions.values()).map(p => p.y));
-    
-    const canvasWidth = Math.max(maxX + nodeWidth + 200, 1000);
-    const canvasHeight = Math.max(maxY + nodeHeight + 200, 600);
-
     return (
-        // Wrapper ki classes conditionally change hongi based on isFullscreen
-        <div className={`flex flex-col bg-surface shadow-sm overflow-hidden transition-all duration-300 ${
-            isFullscreen 
-                ? "fixed inset-0 z-[100] w-screen h-screen rounded-none" 
-                : "relative w-full h-[500px] border border-surfaceBorder rounded-xl"
-        }`}>
-            
-            {/* Fixed Header */}
-            <div className="flex items-center justify-between p-4 border-b border-surfaceBorder bg-surfaceBorder/20 z-10 shrink-0">
-                <div className="flex items-center gap-2">
-                    <Server className="text-primary" size={18} />
-                    <h3 className="font-bold text-gray-200">Service Dependency Graph</h3>
-                </div>
-                
+        <div 
+            className={`flex flex-col bg-surface shadow-sm overflow-hidden transition-all duration-300 border-surfaceBorder ${
+                isFullscreen ? "fixed inset-0 z-[100] w-screen h-screen" : "relative w-full h-[600px] border rounded-xl"
+            }`}
+        >
+            {/* Header Controls */}
+            <div className="flex items-center justify-between p-4 border-b border-surfaceBorder bg-surface/80 backdrop-blur-md z-10">
                 <div className="flex items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted bg-background px-3 py-1.5 rounded-full border border-surfaceBorder shadow-sm">
-                        <Hand size={14} className="text-primary" /> Drag to pan
+                    <div className="flex items-center gap-2">
+                        <Server className="text-primary" size={18} />
+                        <h3 className="font-bold text-gray-200">Interactive Dependency Graph</h3>
                     </div>
-                    
-                    {/* Expand/Collapse Button */}
-                    <button 
-                        onClick={() => setIsFullscreen(!isFullscreen)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white bg-surfaceBorder/30 hover:bg-surfaceBorder/60 rounded-lg transition-colors border border-surfaceBorder/50"
-                        title={isFullscreen ? "Close Fullscreen" : "Expand to Fullscreen"}
-                    >
-                        {isFullscreen ? (
-                            <><Minimize size={16} /> <span className="hidden sm:inline">Close</span></>
-                        ) : (
-                            <><Maximize size={16} /> <span className="hidden sm:inline">Expand</span></>
-                        )}
+                    <button onClick={resetView} className="p-1.5 hover:bg-surfaceBorder/50 rounded-lg text-muted transition-colors flex items-center gap-2 text-xs border border-surfaceBorder">
+                        <Search size={14} /> Reset View
+                    </button>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-4 px-3 py-1.5 bg-background rounded-full border border-surfaceBorder text-[10px] text-muted font-mono uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5"><MousePointer2 size={12} /> Drag to Pan</div>
+                        <div className="w-px h-3 bg-surfaceBorder" />
+                        <div className="flex items-center gap-1.5"><Hand size={12} /> Scroll to Zoom</div>
+                    </div>
+                    <button onClick={() => setIsFullscreen(!isFullscreen)} className="p-2 hover:bg-surfaceBorder/50 rounded-lg text-gray-300 border border-surfaceBorder">
+                        {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
                     </button>
                 </div>
             </div>
 
-            {/* Draggable Interactive Viewport */}
+            {/* 🚀 THE INFINITE CANVAS */}
             <div 
-                ref={containerRef} 
-                className="relative flex-1 overflow-hidden cursor-grab active:cursor-grabbing bg-[#09090b]"
+                ref={containerRef}
+                onWheel={handleWheel}
+                className="relative flex-1 bg-[#070708] cursor-grab active:cursor-grabbing overflow-hidden"
             >
-                {/* Dot Grid Background */}
-                <div className="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:20px_20px] opacity-40 pointer-events-none" />
+                {/* Dot Grid follows the pan and zoom */}
+                <motion.div 
+                    style={{ x, y, scale }}
+                    className="absolute inset-0 pointer-events-none opacity-20"
+                    // Isse background grid bhi move hogi
+                >
+                    <div className="w-[5000px] h-[5000px] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px] -translate-x-1/2 -translate-y-1/2" />
+                </motion.div>
 
                 <motion.div
                     drag
-                    dragConstraints={containerRef}
-                    dragElastic={0.1}
-                    className="absolute top-0 left-0"
-                    style={{ width: canvasWidth, height: canvasHeight }}
+                    dragMomentum={false}
+                    style={{ x, y, scale }}
+                    className="absolute inset-0 origin-center"
                 >
-                    {/* SVG Arrows Layer */}
-                    <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%">
+                    <svg className="absolute inset-0 pointer-events-none" width="5000" height="5000">
                         <defs>
-                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" opacity="0.6" />
-                            </marker>
+                            <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" /></marker>
+                            <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" /></marker>
+                            <filter id="neon"><feGaussianBlur stdDeviation="1.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
                         </defs>
                         
                         {graphData.edges.map((edge, i) => {
-                            const sourcePos = nodePositions.get(edge.source);
-                            const targetPos = nodePositions.get(edge.target);
-                            if (!sourcePos || !targetPos) return null;
-
-                            const startX = sourcePos.x + nodeWidth;
-                            const startY = sourcePos.y + (nodeHeight / 2);
-                            const endX = targetPos.x;
-                            const endY = targetPos.y + (nodeHeight / 2);
-
-                            const controlPointX1 = startX + 60;
-                            const controlPointX2 = endX - 60;
-
+                            const s = nodePositions.get(edge.source);
+                            const t = nodePositions.get(edge.target);
+                            if (!s || !t) return null;
+                            const path = `M ${s.x + nodeWidth} ${s.y + nodeHeight/2} C ${s.x + nodeWidth + 60} ${s.y + nodeHeight/2}, ${t.x - 60} ${t.y + nodeHeight/2}, ${t.x} ${t.y + nodeHeight/2}`;
+                            const isErr = graphData.nodes.find(n => n.id === edge.target)?.hasError;
+                            
                             return (
-                                <motion.path
-                                    key={i}
-                                    initial={{ pathLength: 0, opacity: 0 }}
-                                    animate={{ pathLength: 1, opacity: 1 }}
-                                    transition={{ duration: 0.8, delay: i * 0.15 }}
-                                    d={`M ${startX} ${startY} C ${controlPointX1} ${startY}, ${controlPointX2} ${endY}, ${endX} ${endY}`}
-                                    fill="none"
-                                    stroke="#6366f1"
-                                    strokeOpacity="0.4"
-                                    strokeWidth="2"
-                                    markerEnd="url(#arrowhead)"
-                                />
+                                <g key={i}>
+                                    <path d={path} fill="none" stroke={isErr ? "#ef4444" : "#6366f1"} strokeOpacity="0.1" strokeWidth="2" />
+                                    <motion.path 
+                                        d={path} fill="none" stroke={isErr ? "#ef4444" : "#6366f1"} strokeWidth="2.5" strokeDasharray="8 12"
+                                        animate={{ strokeDashoffset: [0, -40] }}
+                                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                                        markerEnd={isErr ? "url(#arrow-red)" : "url(#arrow-blue)"}
+                                        filter="url(#neon)"
+                                    />
+                                </g>
                             );
                         })}
                     </svg>
 
-                    {/* Nodes Layer */}
-                    {graphData.nodes.map((node, i) => {
+                    {graphData.nodes.map((node) => {
                         const pos = nodePositions.get(node.id);
                         if (!pos) return null;
-
                         return (
                             <motion.div
                                 key={node.id}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.4, delay: i * 0.1 }}
-                                className={`absolute flex flex-col justify-center px-4 py-3 rounded-lg border shadow-lg backdrop-blur-md transition-colors
-                                    ${node.hasError 
-                                        ? "bg-red-500/10 border-red-500/50 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.1)]" 
-                                        : "bg-surface/80 border-surfaceBorder text-gray-200"
-                                    }`}
-                                style={{
-                                    left: pos.x,
-                                    top: pos.y,
-                                    width: nodeWidth,
-                                    height: nodeHeight
-                                }}
+                                onClick={() => setSelectedNode(node)}
+                                whileHover={{ scale: 1.05, y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}
+                                className={`absolute p-4 rounded-xl border-2 backdrop-blur-xl cursor-pointer transition-colors duration-300
+                                    ${node.hasError ? "bg-red-500/10 border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.15)]" : "bg-surface/90 border-surfaceBorder"}
+                                `}
+                                style={{ left: pos.x, top: pos.y, width: nodeWidth, height: nodeHeight }}
                             >
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="font-mono text-[13px] font-bold truncate pr-2 tracking-tight">
-                                        {node.service}
-                                    </span>
-                                    {node.hasError && <AlertCircle size={16} className="text-red-500 shrink-0" />}
+                                    <span className="font-mono text-xs font-bold text-gray-200">{node.service}</span>
+                                    {node.hasError && <AlertCircle size={14} className="text-red-500" />}
                                 </div>
-                                <div className="flex items-center gap-1.5 text-xs text-muted bg-background/50 w-fit px-2 py-0.5 rounded border border-surfaceBorder/50">
-                                    <Clock size={12} className={node.hasError ? "text-red-400" : "text-primary"} />
-                                    <span className="font-mono">{node.duration}ms</span>
+                                <div className="flex items-center gap-2 text-[10px] text-muted font-mono bg-black/40 px-2 py-1 rounded w-fit">
+                                    <Clock size={10} className={node.hasError ? "text-red-400" : "text-primary"} />
+                                    {node.duration}ms
                                 </div>
                             </motion.div>
                         );
                     })}
                 </motion.div>
             </div>
+
+            {/* Sidebar Inspector Code [cite: 1216, 1217] */}
+            <AnimatePresence>
+                {selectedNode && (
+                    <>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedNode(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[105]" />
+                        <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 30 }} className="absolute top-0 right-0 h-full w-[400px] bg-surface border-l border-surfaceBorder z-[110] p-6 shadow-2xl">
+                            <div className="flex justify-between items-center mb-8 pb-4 border-b border-surfaceBorder">
+                                <h2 className="text-lg font-bold flex items-center gap-2"><ActivitySquare className="text-primary" /> Service Detail</h2>
+                                <button onClick={() => setSelectedNode(null)} className="p-1 hover:bg-surfaceBorder rounded"><X /></button>
+                            </div>
+                            <div className="space-y-6">
+                                <div className="bg-background/50 p-4 rounded-lg border border-surfaceBorder">
+                                    <label className="text-[10px] text-muted uppercase font-bold">Service Name</label>
+                                    <div className="text-xl font-mono text-gray-100">{selectedNode.service}</div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-background/50 p-4 rounded-lg border border-surfaceBorder">
+                                        <label className="text-[10px] text-muted uppercase font-bold">Total Duration</label>
+                                        <div className="text-lg font-mono text-primary">{selectedNode.duration}ms</div>
+                                    </div>
+                                    <div className="bg-background/50 p-4 rounded-lg border border-surfaceBorder">
+                                        <label className="text-[10px] text-muted uppercase font-bold">Status</label>
+                                        <div className={`text-lg font-bold ${selectedNode.hasError ? 'text-red-500' : 'text-green-500'}`}>{selectedNode.hasError ? 'FAILING' : 'HEALTHY'}</div>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => { onViewLogs?.(selectedNode.id); setSelectedNode(null); setIsFullscreen(false); }}
+                                    className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all"
+                                >
+                                    <ListTree size={18} /> Jump to Logs
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

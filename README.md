@@ -92,6 +92,8 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 
 ### Phase 4.5: Developer Experience (DX) & UI Polish (In Progress)
 - [x] **Interactive Onboarding & Setup Guide:** Develop a new SetupGuide.tsx component to provide users with step-by-step integration instructions featuring their unique Ingest URL and Project ID. Provide pre-configured code snippets for Node.js and Python to enable SDK connection in under 2 minutes.
+- [x] **Advanced Sidebar Command Center:** Dynamic Project Switcher: A dropdown at the top of the sidebar for seamless navigation between multiple isolated projects.Service Health Overview: A global status indicator to monitor the real-time health (Up/Down) of every connected microservice.
+- [x] **Interactive Trace Exploration:** Span Metadata Inspector: A slide-over panel triggered by clicking a span in the Waterfall view to display raw tags, metadata, and high-precision timestamps. Deep Linking (Waterfall to Logs): Automatic page scrolling and highlighting of specific log events when a corresponding span is selected in the trace view.
 
 
 
@@ -100,12 +102,7 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 This project is continually evolving from a single-user MVP into a fully-fledged enterprise SaaS product. Here is the exact roadmap for upcoming features and architectural upgrades:
 
 
-
 ### Phase 4.5: Developer Experience (DX) & UI Polish (In Progress)
-
-- [ ] **Advanced Sidebar Command Center:** Dynamic Project Switcher: A dropdown at the top of the sidebar for seamless navigation between multiple isolated projects.Service Health Overview: A global status indicator to monitor the real-time health (Up/Down) of every connected microservice.
-
-- [ ] **Interactive Trace Exploration:** Span Metadata Inspector: A slide-over panel triggered by clicking a span in the Waterfall view to display raw tags, metadata, and high-precision timestamps. Deep Linking (Waterfall to Logs): Automatic page scrolling and highlighting of specific log events when a corresponding span is selected in the trace view.
 
 - [ ] **Live Traffic Feed:** A "Live Mode" dashboard toggle that utilizes optimized periodic polling to display incoming incidents and traces without requiring a manual refresh.
 
