@@ -184,7 +184,15 @@ export default function TraceGraph({ traceId, onViewLogs }: TraceGraphProps) {
                         <defs>
                             <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" /></marker>
                             <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" /></marker>
-                            <filter id="neon"><feGaussianBlur stdDeviation="1.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                            
+                            {/* 🚀 THE FIX: filterUnits="userSpaceOnUse" ensures the glow never clips 0-height straight lines */}
+                            <filter id="neon" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="1.5" result="blur"/>
+                                <feMerge>
+                                    <feMergeNode in="blur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
                         </defs>
                         
                         {graphData.edges.map((edge, i) => {
@@ -195,23 +203,27 @@ export default function TraceGraph({ traceId, onViewLogs }: TraceGraphProps) {
                             const startX = s.x + nodeWidth;
                             const startY = s.y + nodeHeight / 2;
                             const endX = t.x;
+                            const endY = t.y + nodeHeight / 2;
+
+                            const deltaX = endX - startX;
+                            const deltaY = endY - startY;
                             
-                            // 🚀 Wahi purana hack horizontal straight lines ke neon filter bug ke liye
-                            const endY = t.y + nodeHeight / 2 + (s.y === t.y ? 0.01 : 0);
+                            const offset = Math.min(deltaX * 0.5, 80);
 
-                            // 🚀 THE FIX: Control points for angled entry
-                            const cp1X = startX + 80;
-                            const cp1Y = startY;
-                            const cp2X = endX - 80;
-                            // Flat horizontal end ke bajaye, hum thoda sa angle (25%) chhod rahe hain
-                            const cp2Y = endY - (endY - startY) * 0.25; 
+                            const cp1X = startX + offset;
+                            const cp1Y = startY; 
+                            
+                            const cp2X = endX - offset;
+                            const cp2Y = endY - deltaY * 0.15; 
 
+                            // 🚀 Ab humein 0.01 wale hack ki zaroorat nahi hai
                             const path = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
                             const isErr = graphData.nodes.find(n => n.id === edge.target)?.hasError;
                             
                             return (
                                 <g key={i}>
-                                    <path d={path} fill="none" stroke={isErr ? "#ef4444" : "#6366f1"} strokeOpacity="0.1" strokeWidth="2" />
+                                    {/* 🚀 Safety ke liye humne base path par bhi pointer laga diya hai */}
+                                    <path d={path} fill="none" stroke={isErr ? "#ef4444" : "#6366f1"} strokeOpacity="0.2" strokeWidth="2" markerEnd={isErr ? "url(#arrow-red)" : "url(#arrow-blue)"} />
                                     <motion.path 
                                         d={path} fill="none" stroke={isErr ? "#ef4444" : "#6366f1"} strokeWidth="2.5" strokeDasharray="8 12"
                                         animate={{ strokeDashoffset: [0, -40] }}
