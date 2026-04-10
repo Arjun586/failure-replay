@@ -13,7 +13,6 @@ import AcceptInvite from '../features/auth/pages/AcceptInvite';
 import Dashboard from '../features/dashboard/pages/Dashboard';
 import IncidentTimeline from '../features/incidents/pages/IncidentTimeline';
 import Incidents from '../features/incidents/pages/Incidents';
-import Postmortems from '../features/incidents/pages/Postmortems';
 import Settings from '../features/dashboard/pages/Settings';
 
 
@@ -37,7 +36,6 @@ export default function App() {
                     
                     {/* Empty Routes for sidebar links */}
                     <Route path="/incidents" element={<Incidents />} />
-                    <Route path="/postmortems" element={<Postmortems />} />
                     <Route path="/settings" element={<Settings />} />
                 </Route>
             </Route>

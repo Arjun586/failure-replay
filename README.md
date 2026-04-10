@@ -94,7 +94,7 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 - [x] **Interactive Onboarding & Setup Guide:** Develop a new SetupGuide.tsx component to provide users with step-by-step integration instructions featuring their unique Ingest URL and Project ID. Provide pre-configured code snippets for Node.js and Python to enable SDK connection in under 2 minutes.
 - [x] **Advanced Sidebar Command Center:** Dynamic Project Switcher: A dropdown at the top of the sidebar for seamless navigation between multiple isolated projects.Service Health Overview: A global status indicator to monitor the real-time health (Up/Down) of every connected microservice.
 - [x] **Interactive Trace Exploration:** Span Metadata Inspector: A slide-over panel triggered by clicking a span in the Waterfall view to display raw tags, metadata, and high-precision timestamps. Deep Linking (Waterfall to Logs): Automatic page scrolling and highlighting of specific log events when a corresponding span is selected in the trace view.
-
+- [x] **Next-Gen Timeline Observability:** Contextual Metadata Drawer: A sleek slide-out panel that instantly reveals deep OpenTelemetry attributes, raw SQL payloads, and full error stack traces upon clicking a span without cluttering the main UI. Smart Span Collapsing: Automatically detects and groups repetitive N+1 query patterns into single expandable blocks to optimize DOM performance and readability. Critical Path Highlighting: Algorithmically traces and visually highlights the exact sequence of bottlenecks contributing to the highest request latency.
 
 
 ## 🗺️ Roadmap & Future Scope
