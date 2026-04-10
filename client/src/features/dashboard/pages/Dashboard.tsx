@@ -1,89 +1,100 @@
+// client/src/features/dashboard/pages/Dashboard.tsx
 import { useState } from 'react';
-import { Activity, Loader2, Code2, UploadCloud } from 'lucide-react'; 
+import { motion } from 'framer-motion';
+import { Activity, ShieldCheck, AlertTriangle, Code2, UploadCloud, Terminal } from 'lucide-react';
 import { useAuth } from '../../../core/context/auth';
-import { apiClient } from '../../../core/api/client';
+import { useIncidents } from '../../incidents/hooks/useIncidents';
 import SetupGuide from '../../projects/components/SetupGuide';
 import FileUploader from '../../projects/components/FileUploader';
-import IncidentTable from '../../incidents/components/IncidentTable';
 
 export default function Dashboard() {
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [isSimulating, setIsSimulating] = useState(false);
     const { activeProject } = useAuth();
-    const [isSetupOpen, setIsSetupOpen] = useState(false); 
+    const { incidents } = useIncidents(activeProject?.id);
+    const [isSetupOpen, setIsSetupOpen] = useState(false);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-    const handleSimulateTraffic = async () => {
-        if (!activeProject) return;
-        setIsSimulating(true);
-        try {
-            await apiClient.post(`/projects/${activeProject.id}/simulate`);
-            setRefreshKey(prev => prev + 1); 
-        } catch (error) {
-            console.error("Failed to simulate traffic:", error);
-        } finally {
-            setIsSimulating(false);
-        }
+    // Calculate mock metrics based on existing incidents
+    const criticalCount = incidents.filter(i => i.severity === 'critical').length;
+    const resolvedCount = incidents.filter(i => i.status === 'resolved').length;
+    const systemHealthy = criticalCount === 0;
+
+    const containerVars = {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    };
+
+    const itemVars = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto space-y-8">
             <header className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold text-gray-100 tracking-tight">Dashboard</h2>
-                    <p className="text-muted mt-2">Monitor and investigate system failures in real-time.</p>
+                    <h2 className="text-3xl font-bold text-gray-100 tracking-tight">Command Center</h2>
+                    <p className="text-muted mt-2">Real-time overview for {activeProject?.name || 'your workspace'}.</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => setIsSetupOpen(true)}
-                        className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors border border-surfaceBorder hover:border-gray-500 bg-surface px-4 py-2.5 rounded-lg font-medium"
-                    >
-                        <Code2 size={16} className="text-primary" />
-                        Instrument App
+                    <button onClick={() => setIsUploadOpen(!isUploadOpen)} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors border border-surfaceBorder hover:border-gray-500 bg-surface px-4 py-2 rounded-lg font-medium">
+                        <UploadCloud size={16} /> Upload Logs
                     </button>
-
-                    <button 
-                        onClick={() => setIsUploadOpen(!isUploadOpen)}
-                        className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors border border-surfaceBorder hover:border-gray-500 bg-surface px-4 py-2.5 rounded-lg font-medium"
-                    >
-                        <UploadCloud size={16} />
-                        Upload
-                    </button>
-
-                    <button 
-                        onClick={handleSimulateTraffic}
-                        disabled={isSimulating || !activeProject}
-                        className="flex items-center gap-2 bg-glass border border-primary/50 text-primary hover:bg-primary/10 px-4 py-2.5 rounded-lg font-medium transition-all shadow-[0_0_15px_rgb(var(--primary)/0.15)] disabled:opacity-50"
-                    >
-                        {isSimulating ? <Loader2 size={18} className="animate-spin" /> : <Activity size={18} />}
-                        Simulate Mock Traffic
+                    <button onClick={() => setIsSetupOpen(true)} className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-medium transition-all shadow-[0_0_15px_rgb(var(--primary)/0.3)]">
+                        <Code2 size={16} /> Instrument SDK
                     </button>
                 </div>
             </header>
 
-            {isSetupOpen && activeProject && (
-                <SetupGuide 
-                    projectId={activeProject.id} 
-                    onClose={() => setIsSetupOpen(false)} 
-                />
-            )}
+            {isSetupOpen && activeProject && <SetupGuide projectId={activeProject.id} onClose={() => setIsSetupOpen(false)} />}
+            {isUploadOpen && <div className="mb-6"><FileUploader onUploadSuccess={() => setIsUploadOpen(false)} /></div>}
 
-            {isUploadOpen && (
-                <div className="mb-6">
-                    <FileUploader onUploadSuccess={() => {
-                        setRefreshKey(prev => prev + 1);
-                        setIsUploadOpen(false);
-                    }} />
-                </div>
-            )}
+            {/* Metrics Grid */}
+            <motion.div variants={containerVars} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* System Health Card */}
+                <motion.div variants={itemVars} className="bg-surface border border-surfaceBorder rounded-2xl p-6 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 group-hover:scale-110 transition-transform" />
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className={`p-3 rounded-xl ${systemHealthy ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                            {systemHealthy ? <ShieldCheck size={24} /> : <AlertTriangle size={24} />}
+                        </div>
+                        <div>
+                            <h3 className="text-muted text-sm font-medium">System Status</h3>
+                            <p className={`text-xl font-bold ${systemHealthy ? 'text-green-400' : 'text-red-400'}`}>
+                                {systemHealthy ? 'Healthy' : 'Degraded'}
+                            </p>
+                        </div>
+                    </div>
+                    {systemHealthy ? (
+                        <div className="flex items-center gap-2 text-sm text-muted mt-4"><span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span> All services operational.</div>
+                    ) : (
+                        <div className="flex items-center gap-2 text-sm text-red-400 mt-4"><span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span> {criticalCount} critical alerts active.</div>
+                    )}
+                </motion.div>
 
-            <div className="mt-4">
-                <IncidentTable 
-                    projectId={activeProject?.id}
-                    key={refreshKey} 
-                />
-            </div>
+                {/* Total Incidents */}
+                <motion.div variants={itemVars} className="bg-surface border border-surfaceBorder rounded-2xl p-6">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 rounded-xl bg-blue-500/20 text-blue-500"><Activity size={24} /></div>
+                        <div>
+                            <h3 className="text-muted text-sm font-medium">Total Tracked Incidents</h3>
+                            <p className="text-2xl font-bold text-gray-100">{incidents.length}</p>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Resolution Rate */}
+                <motion.div variants={itemVars} className="bg-surface border border-surfaceBorder rounded-2xl p-6">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 rounded-xl bg-purple-500/20 text-purple-500"><Terminal size={24} /></div>
+                        <div>
+                            <h3 className="text-muted text-sm font-medium">Resolved Incidents</h3>
+                            <p className="text-2xl font-bold text-gray-100">{resolvedCount}</p>
+                        </div>
+                    </div>
+                </motion.div>
+            </motion.div>
         </div>
     );
 }

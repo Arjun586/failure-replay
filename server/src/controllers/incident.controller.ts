@@ -106,3 +106,42 @@ export const getIncidentTimeline = async (req: Request, res: Response): Promise<
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
+
+
+// Add this below your existing getIncidentTimeline function
+export const getIncidentLogs = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params; // Incident ID
+        const { cursor } = req.query; // The ID of the last log we fetched
+        const limit = 50; // How many logs to fetch per request
+
+        if (!id || typeof id !== 'string') {
+            res.status(400).json({ success: false, message: 'Invalid incident ID' });
+            return;
+        }
+
+        const logs = await prisma.logEvent.findMany({
+            where: { incidentId: id },
+            take: limit,
+            skip: cursor ? 1 : 0, // If we have a cursor, skip the cursor item itself
+            ...(cursor && { cursor: { id: String(cursor) } }),
+            orderBy: { timestamp: "asc" },
+            include: {
+                trace: true,
+                span: true
+            }
+        });
+
+        // Determine the next cursor
+        const nextCursor = logs.length === limit ? logs[logs.length - 1].id : null;
+
+        res.status(200).json({ 
+            success: true, 
+            data: logs,
+            nextCursor 
+        });
+    } catch (error) {
+        console.error("Error fetching paginated logs:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};

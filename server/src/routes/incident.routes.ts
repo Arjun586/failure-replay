@@ -1,6 +1,6 @@
 // server/src/routes/incident.routes.ts
 import { Router } from 'express';
-import { createIncident, getIncidents, getIncidentTimeline } from '../controllers/incident.controller';
+import { createIncident, getIncidentLogs, getIncidents, getIncidentTimeline } from '../controllers/incident.controller';
 import { authenticateUser } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -11,5 +11,6 @@ router.use(authenticateUser);
 router.post('/', createIncident);
 router.get('/', getIncidents);
 router.get('/:id/timeline', getIncidentTimeline);
+router.get('/:id/logs', getIncidentLogs);
 
 export default router;

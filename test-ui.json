@@ -1,0 +1,170 @@
+[
+  {
+    "timestamp": "2026-04-11T10:00:00.000Z",
+    "level": "INFO",
+    "message": "Incoming POST /api/v2/checkout/process",
+    "service": "api-gateway",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.015Z",
+    "level": "INFO",
+    "message": "Authenticating user token and session limits.",
+    "service": "auth-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.045Z",
+    "level": "INFO",
+    "message": "Routing authenticated request to order-orchestrator",
+    "service": "api-gateway",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.080Z",
+    "level": "INFO",
+    "message": "Initializing Saga Pattern for Order #99102",
+    "service": "order-orchestrator",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.120Z",
+    "level": "INFO",
+    "message": "Fetching user cart items (3 items found).",
+    "service": "cart-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.125Z",
+    "level": "INFO",
+    "message": "Cache MISS for user_cart_992. Fetching from DB.",
+    "service": "redis-cluster",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.180Z",
+    "level": "INFO",
+    "message": "Requesting inventory lock for SKU-A.",
+    "service": "order-orchestrator",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.200Z",
+    "level": "INFO",
+    "message": "Stock reserved for SKU-A.",
+    "service": "inventory-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.220Z",
+    "level": "INFO",
+    "message": "Requesting inventory lock for SKU-B.",
+    "service": "order-orchestrator",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.250Z",
+    "level": "INFO",
+    "message": "Stock reserved for SKU-B.",
+    "service": "inventory-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.300Z",
+    "level": "INFO",
+    "message": "Applying promo code 'SAVE20'",
+    "service": "promotion-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.350Z",
+    "level": "INFO",
+    "message": "Total calculated: $184.50. Initiating payment sequence.",
+    "service": "order-orchestrator",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:00.380Z",
+    "level": "INFO",
+    "message": "Opening connection to Braintree Gateway.",
+    "service": "payment-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:02.100Z",
+    "level": "WARNING",
+    "message": "Braintree API latency high (>1500ms).",
+    "service": "payment-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:05.150Z",
+    "level": "ERROR",
+    "message": "Braintree Connection Timeout. Initiating Retry 1/2.",
+    "service": "payment-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:10.200Z",
+    "level": "ERROR",
+    "message": "Braintree Connection Timeout. Initiating Retry 2/2.",
+    "service": "payment-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:15.500Z",
+    "level": "CRITICAL",
+    "message": "Payment Gateway Unreachable. Aborting transaction.",
+    "service": "payment-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:15.550Z",
+    "level": "INFO",
+    "message": "Saga Compensation Triggered: Emitting 'rollback-inventory' event.",
+    "service": "order-orchestrator",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:15.580Z",
+    "level": "INFO",
+    "message": "Received rollback event. Unlocking SKU-A and SKU-B.",
+    "service": "kafka-worker",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:15.650Z",
+    "level": "WARNING",
+    "message": "Postgres connection pool maxed out (100/100). Queuing rollback query.",
+    "service": "postgres-cluster",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:25.800Z",
+    "level": "ERROR",
+    "message": "Query timeout. Failed to unlock inventory in database.",
+    "service": "inventory-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:25.850Z",
+    "level": "CRITICAL",
+    "message": "Saga Rollback Failed! Database state inconsistent for Order #99102.",
+    "service": "order-orchestrator",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:25.900Z",
+    "level": "INFO",
+    "message": "Dispatching dead-letter alert to engineering team.",
+    "service": "notification-service",
+    "correlationId": "tx-ui-test-777"
+  },
+  {
+    "timestamp": "2026-04-11T10:00:26.000Z",
+    "level": "ERROR",
+    "message": "Returning 500 Internal Server Error to client app.",
+    "service": "api-gateway",
+    "correlationId": "tx-ui-test-777"
+  }
+]
