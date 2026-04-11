@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { createIncident, getIncidentLogs, getIncidents, getIncidentTimeline } from '../controllers/incident.controller';
 import { authenticateUser } from '../middleware/auth.middleware';
+import { updateIncidentStatus } from '../controllers/incident.controller';
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.post('/', createIncident);
 router.get('/', getIncidents);
 router.get('/:id/timeline', getIncidentTimeline);
 router.get('/:id/logs', getIncidentLogs);
+router.patch('/:id/status', updateIncidentStatus)
 
 export default router;

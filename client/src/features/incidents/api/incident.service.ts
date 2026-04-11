@@ -96,7 +96,12 @@ export const incidentService = {
     getIncidentTimeline: async (incidentId: string) => {
         const response = await apiClient.get(`/incidents/${incidentId}/timeline`);
         return response.data.data;
-    }
+    },
+
+    async updateStatus(incidentId: string, status: string) {
+    const response = await apiClient.patch(`/incidents/${incidentId}/status`, { status });
+    return response.data;
+}
 };
 
 

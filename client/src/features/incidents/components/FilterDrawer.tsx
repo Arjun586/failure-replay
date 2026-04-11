@@ -1,7 +1,7 @@
 // client/src/features/incidents/components/FilterDrawer.tsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Filter, AlertCircle, Server } from 'lucide-react';
+import { X, Filter, AlertCircle, Server,Activity } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../core/context/auth'; 
 import { apiClient } from '../../../core/api/client';
@@ -140,6 +140,34 @@ export default function FilterDrawer({ isOpen, onClose }: FilterDrawerProps) {
                                             >
                                                 <div className={`w-2 h-2 rounded-full ${sev === 'critical' ? 'bg-red-500' : sev === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`} />
                                                 {sev.charAt(0).toUpperCase() + sev.slice(1)}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-2">
+                                    <Activity size={14} /> Incident Status
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {['open', 'in_progress', 'resolved'].map(stat => {
+                                        const isActive = searchParams.get('status')?.split(',').includes(stat);
+                                        // Dynamic colors for statuses
+                                        let dotColor = 'bg-gray-500';
+                                        if (stat === 'open') dotColor = 'bg-red-500';
+                                        if (stat === 'in_progress') dotColor = 'bg-yellow-500';
+                                        if (stat === 'resolved') dotColor = 'bg-green-500';
+
+                                        return (
+                                            <button 
+                                                key={stat} onClick={() => toggleParam('status', stat)}
+                                                className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all text-center flex flex-col items-center gap-1.5
+                                                    ${isActive ? 'bg-primary/10 border-primary text-primary' : 'bg-[#18181b] border-surfaceBorder text-gray-400 hover:text-gray-200'}
+                                                `}
+                                            >
+                                                <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+                                                {stat === 'in_progress' ? 'In Progress' : stat.charAt(0).toUpperCase() + stat.slice(1)}
                                             </button>
                                         )
                                     })}

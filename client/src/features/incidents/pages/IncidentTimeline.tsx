@@ -11,6 +11,7 @@ import { useTimeline } from '../hooks/useTimeline';
 import TraceGraph from "../components/TraceGraph";
 import SpanWaterfall from '../components/SpanWaterfall';
 
+
 type ViewMode = 'timeline' | 'waterfall' | 'graph';
 
 export default function IncidentTimeline() {

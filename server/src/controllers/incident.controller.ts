@@ -205,3 +205,66 @@ export const getIncidentLogs = async (req: Request, res: Response): Promise<void
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
+
+
+export const updateIncidentStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+        
+        const id = req.params.id as string; 
+        const status = req.body.status as string;
+        const userId = (req as any).user.id as string; 
+
+        // 1. Valid statuses ka check
+        const validStatuses = ['open', 'in_progress', 'resolved', 'ignored'];
+        if (!validStatuses.includes(status)) {
+            res.status(400).json({ success: false, message: "Invalid status value" });
+            return;
+        }
+
+        
+        const incident = await prisma.incident.findUnique({
+            where: { id }
+        });
+
+        if (!incident) {
+            res.status(404).json({ success: false, message: "Incident not found" });
+            return;
+        }
+
+        // 🚀 FIX 2: Project ko alag se fetch karo incident.projectId use karke
+        const project = await prisma.project.findUnique({
+            where: { id: incident.projectId }
+        });
+
+        if (!project) {
+            res.status(404).json({ success: false, message: "Project not found" });
+            return;
+        }
+
+        // 3. RBAC Check: Kya yeh user is Organization ka member hai?
+        const membership = await prisma.organizationMember.findUnique({
+            where: {
+                userId_organizationId: {
+                    userId: userId,
+                    organizationId: project.organizationId
+                }
+            }
+        });
+
+        if (!membership) {
+            res.status(403).json({ success: false, message: "Unauthorized to update this incident" });
+            return;
+        }
+
+        // 4. Update the Database
+        const updatedIncident = await prisma.incident.update({
+            where: { id },
+            data: { status }
+        });
+
+        res.status(200).json({ success: true, data: updatedIncident });
+    } catch (error) {
+        console.error("Error updating incident status:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};

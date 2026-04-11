@@ -72,7 +72,7 @@ export default function IncidentTable({ onDataLoad, isLiveMode = false, searchPa
                         {/* 🚀 DATA ROWS */}
                         {!isLoading && incidents.map((incident) => (
                             <tr key={incident.id} 
-                                onClick={() => navigate(`/incidents/${incident.id}`)} // Fixed route from /incident/ to /incidents/ (if your route uses plural)
+                                onClick={() => navigate(`/incident/${incident.id}`)} // Fixed route from /incident/ to /incidents/ (if your route uses plural)
                                 className="hover:bg-surfaceBorder/20 transition-colors cursor-pointer"
                             >
                                 <td className="px-6 py-4 font-medium text-gray-200 flex items-center gap-3">
