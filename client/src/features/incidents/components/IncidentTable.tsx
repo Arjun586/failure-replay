@@ -91,7 +91,13 @@ export default function IncidentTable({ onDataLoad, isLiveMode = false, searchPa
                                     className="hover:bg-surfaceBorder/20 transition-colors cursor-pointer"
                                 >
                                     <td className="px-6 py-4 font-medium text-gray-200 flex items-center gap-3">
-                                        <AlertCircle size={16} className={incident.severity === 'critical' ? 'text-red-500' : 'text-muted'} />
+                                        {incident.status === 'resolved' ? (
+                                            <CheckCircle2 size={16} className="text-green-500" />
+                                        ) : incident.status === 'in_progress' ? (
+                                            <Activity size={16} className="text-yellow-500" />
+                                        ) : (
+                                            <AlertCircle size={16} className={incident.severity === 'critical' ? 'text-red-500' : 'text-muted'} />
+                                        )}
                                         <span className="truncate max-w-[300px]">{incident.title}</span>
                                     </td>
                                     

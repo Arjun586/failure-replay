@@ -1,7 +1,7 @@
 // client/src/features/dashboard/pages/Dashboard.tsx
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, ShieldCheck, AlertTriangle, Code2, UploadCloud, Terminal } from 'lucide-react';
+import { Activity, ShieldCheck, AlertTriangle, Code2, UploadCloud, Terminal, Clock } from 'lucide-react';
 import { useAuth } from '../../../core/context/auth';
 import { useIncidents } from '../../incidents/hooks/useIncidents';
 import SetupGuide from '../../projects/components/SetupGuide';
@@ -16,6 +16,7 @@ export default function Dashboard() {
     // Calculate mock metrics based on existing incidents
     const criticalCount = incidents.filter(i => i.severity === 'critical' && i.status !== 'resolved').length;
     const resolvedCount = incidents.filter(i => i.status === 'resolved').length;
+    const inProgressCount = incidents.filter(i => i.status === 'in_progress').length; 
     const systemHealthy = criticalCount === 0;
 
     const containerVars = {
@@ -49,8 +50,9 @@ export default function Dashboard() {
             {isSetupOpen && activeProject && <SetupGuide projectId={activeProject.id} onClose={() => setIsSetupOpen(false)} />}
             {isUploadOpen && <div className="mb-6"><FileUploader onUploadSuccess={() => setIsUploadOpen(false)} /></div>}
 
+            
             {/* Metrics Grid */}
-            <motion.div variants={containerVars} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <motion.div variants={containerVars} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 
                 {/* System Health Card */}
                 <motion.div variants={itemVars} className="bg-surface border border-surfaceBorder rounded-2xl p-6 relative overflow-hidden group">
@@ -78,8 +80,19 @@ export default function Dashboard() {
                     <div className="flex items-center gap-4 mb-4">
                         <div className="p-3 rounded-xl bg-blue-500/20 text-blue-500"><Activity size={24} /></div>
                         <div>
-                            <h3 className="text-muted text-sm font-medium">Total Tracked Incidents</h3>
+                            <h3 className="text-muted text-sm font-medium">Total Tracked</h3>
                             <p className="text-2xl font-bold text-gray-100">{incidents.length}</p>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* In Progress Incidents (NEW) */}
+                <motion.div variants={itemVars} className="bg-surface border border-surfaceBorder rounded-2xl p-6">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 rounded-xl bg-yellow-500/20 text-yellow-500"><Clock size={24} /></div>
+                        <div>
+                            <h3 className="text-muted text-sm font-medium">In Progress</h3>
+                            <p className="text-2xl font-bold text-gray-100">{inProgressCount}</p>
                         </div>
                     </div>
                 </motion.div>
@@ -89,7 +102,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-4 mb-4">
                         <div className="p-3 rounded-xl bg-purple-500/20 text-purple-500"><Terminal size={24} /></div>
                         <div>
-                            <h3 className="text-muted text-sm font-medium">Resolved Incidents</h3>
+                            <h3 className="text-muted text-sm font-medium">Resolved</h3>
                             <p className="text-2xl font-bold text-gray-100">{resolvedCount}</p>
                         </div>
                     </div>
