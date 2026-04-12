@@ -111,6 +111,8 @@ This project is continually evolving from a single-user MVP into a fully-fledged
 
 
 ### Must Do before Phase 5
+
+- [ ] **Update Instrument SDK:** Update instrument SDK for user to connect with ReplayOS withour too much hardship
 - [ ] **Live Working:** Check if All this is working with Live Project
 
 
@@ -130,7 +132,7 @@ This project is continually evolving from a single-user MVP into a fully-fledged
 
 **1. Clone and Install**
 ```bash
-git clone https://github.com/yourusername/failure-replay.git
+git clone https://github.com/Arjun586/failure-replay.git
 cd failure-replay
 ```
 

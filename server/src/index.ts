@@ -25,7 +25,8 @@ app.use(cors({
     credentials: true
 })); // Allows React to talk to us
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser()); // Allows us to read JSON data from the frontend
 app.use(morgan('dev')); // Logs requests in the terminal (e.g., "POST /api/incidents 201")
 

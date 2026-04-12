@@ -211,6 +211,8 @@ export const ingestOTLPTraces = async (req: Request, res: Response): Promise<voi
             return;
         }
 
+        res.status(202).json({ success: true, message: "OTLP Traces accepted for processing" });
+
         // Validate incoming OTLP JSON Payload
         const parsedData = OTLPTraceExportSchema.parse(req.body);
 
@@ -283,6 +285,7 @@ export const ingestOTLPTraces = async (req: Request, res: Response): Promise<voi
         }
 
         // 2. Insert into Database (Upsert Traces first, then Spans)
+        // 2. Insert into Database (Upsert Traces first, then Spans)
         for (const traceData of Array.from(tracesMap.values())) {
             
             const savedTrace = await prisma.trace.upsert({
@@ -290,21 +293,24 @@ export const ingestOTLPTraces = async (req: Request, res: Response): Promise<voi
                 update: {
                     status: traceData.status,
                     endedAt: traceData.endedAt,
-                    // Only update root info if it was actually discovered in this batch
                     ...(traceData.rootService !== "unknown" && { rootService: traceData.rootService, rootOperation: traceData.rootOperation })
                 },
                 create: traceData
             });
 
-            // Filter spans belonging to this trace
             const childSpans = spansToInsert.filter(s => s.traceId === traceData.traceId);
+            
+            // 🚀 NAYA STATE: Error wale span ko track karne ke liye
+            let firstErrorDbSpanId = null;
+            let firstErrorService = traceData.rootService;
+            let firstErrorOp = traceData.rootOperation;
 
             for (const span of childSpans) {
-                await prisma.span.upsert({
+                const savedSpan = await prisma.span.upsert({
                     where: { spanId: span.spanId },
-                    update: {}, // Assuming spans are immutable once finished
+                    update: {}, 
                     create: {
-                        traceRefId: savedTrace.id, // Foreign Key to the Prisma Trace model
+                        traceRefId: savedTrace.id, 
                         spanId: span.spanId,
                         parentSpanId: span.parentSpanId,
                         serviceName: span.serviceName,
@@ -315,12 +321,79 @@ export const ingestOTLPTraces = async (req: Request, res: Response): Promise<voi
                         durationMs: span.durationMs
                     }
                 });
+
+                // Agar is span mein error aaya tha, toh iski details note kar lo
+                if (span.status === 'ERROR' && !firstErrorDbSpanId) {
+                    firstErrorDbSpanId = savedSpan.id;
+                    firstErrorService = span.serviceName;
+                    firstErrorOp = span.operationName;
+                }
             }
+
+            // ====================================================================
+            // 🚀 THE MAGIC BRIDGE: AUTO-INCIDENT CREATION
+            // ====================================================================
+            // ====================================================================
+            // 🚀 THE MAGIC BRIDGE: INCIDENT CLUSTERING (Alert Grouping)
+            // ====================================================================
+            if (traceData.status === 'ERROR') {
+                // 1. Behtar Title: Agar root 'unknown' hai toh wahan ka naam lo jahan error fati hai
+                const errorLocation = (firstErrorService && firstErrorService !== 'unknown-service') 
+                    ? firstErrorService 
+                    : (traceData.rootService || 'Unknown Service');
+                
+                const incidentTitle = `Critical Failure in ${errorLocation}`;
+
+                // 2. CLUSTERING LOGIC: Check karo ki kya is service ka incident pehle se OPEN hai?
+                let activeIncident = await prisma.incident.findFirst({
+                    where: {
+                        projectId: projectId,
+                        title: incidentTitle,
+                        status: { in: ['open', 'in_progress'] } // Sirf active incidents mein group karo
+                    }
+                });
+
+                // 3. Agar is issue ka koi open incident nahi hai, tabhi NAYA Incident banao
+                if (!activeIncident) {
+                    activeIncident = await prisma.incident.create({
+                        data: {
+                            title: incidentTitle,
+                            description: `Automated incident generated from OpenTelemetry tracing. Repeated failures detected in downstream service: ${errorLocation}.`,
+                            severity: 'critical',
+                            projectId: projectId,
+                        }
+                    });
+                }
+
+                // 4. Trace ko as an Event is Incident ke andar daal do
+                const existingLog = await prisma.logEvent.findFirst({
+                    where: { traceRefId: savedTrace.id }
+                });
+
+                if (!existingLog) {
+                    await prisma.logEvent.create({
+                        data: {
+                            timestamp: traceData.startedAt,
+                            level: 'CRITICAL',
+                            message: `Operation '${firstErrorOp || 'unknown'}' crashed with an ERROR status.`,
+                            service: firstErrorService || 'unknown',
+                            traceRefId: savedTrace.id,
+                            spanRefId: firstErrorDbSpanId,
+                            incidentId: activeIncident.id // 👈 Sab failed traces ab is ek ID ke andar jayenge
+                        }
+                    });
+                }
+            }
+            // ====================================================================
+            // ====================================================================
         }
 
-        res.status(202).json({ success: true, message: "OTLP Traces ingested successfully" });
+        console.log(`✅ Successfully processed and saved ${tracesMap.size} traces and ${spansToInsert.length} spans.`);
     } catch (error) {
-        console.error("OTLP Ingestion Error:", error);
-        res.status(500).json({ success: false, message: "Failed to ingest traces" });
+        console.error("❌ OTLP Ingestion Error:", error);
+        // Agar response pehle nahi bheja gaya tha, tabhi 500 bhejein
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, message: "Failed to ingest traces" });
+        }
     }
 };
