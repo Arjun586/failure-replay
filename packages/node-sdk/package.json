@@ -1,28 +1,32 @@
 {
   "name": "@replayos/node",
-  "version": "1.0.0",
-  "description": "The official Node.js SDK for ReplayOS Observability",
+  "version": "1.0.2",
+  "description": "The official Node.js SDK for ReplayOS. Automated OpenTelemetry tracing and incident observability.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch",
-    "prepare": "npm run build" 
-},
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arjun586/ReplayOS.git",
+    "directory": "packages/node-sdk"
+  },
   "keywords": [
     "replayos",
-    "observability",
     "opentelemetry",
-    "tracing"
+    "observability",
+    "tracing",
+    "microservices",
+    "apm"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Arjun",
+  "license": "MIT",
   "dependencies": {
-    "@opentelemetry/sdk-node": "^0.51.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.51.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "@opentelemetry/api": "^1.x.x",
+    "@opentelemetry/auto-instrumentations-node": "^0.x.x",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.x.x",
+    "@opentelemetry/sdk-node": "^0.x.x"
   }
 }

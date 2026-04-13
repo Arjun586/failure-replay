@@ -102,6 +102,8 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 - [x] **Review Theme Toggle:** Reviewing Toggle Theme for bug
 - [x] **Udpate Command Center:** Update System Status, When incident resolve change active critcal alerts
 - [x] **Fix Upload Logs:** Recheck that manual uploading is working or not
+- [x] **Create Package:**: Create a ReplayOS for user to use ReplayOS
+- [x] **Update Instrument SDK:** Update instrument SDK for user to connect with ReplayOS withour too much hardship
 
 
 
@@ -112,8 +114,6 @@ This project is continually evolving from a single-user MVP into a fully-fledged
 
 ### Must Do before Phase 5
 
-- [ ] **Create Package:**: Create a ReplayOS for user to use ReplayOS
-- [ ] **Update Instrument SDK:** Update instrument SDK for user to connect with ReplayOS withour too much hardship
 - [ ] **Live Working:** Check if All this is working with Live Project
 
 

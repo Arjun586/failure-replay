@@ -1,0 +1,10 @@
+# Ignore source code
+src/
+tsconfig.json
+
+# Ignore local test files
+test-ping.js
+load-test.js
+temp.txt
+
+# ONLY keep dist/, package.json, and README.md
