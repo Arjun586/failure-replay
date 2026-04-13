@@ -1,0 +1,27 @@
+{
+  "name": "@replayos/node",
+  "version": "1.0.0",
+  "description": "The official Node.js SDK for ReplayOS Observability",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "replayos",
+    "observability",
+    "opentelemetry",
+    "tracing"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@opentelemetry/sdk-node": "^0.51.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.51.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

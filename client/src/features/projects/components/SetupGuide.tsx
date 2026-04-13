@@ -18,45 +18,19 @@ export default function SetupGuide({
 
     // ... (Tumhara same codeSnippets object yahan rahega) ...
     const codeSnippets = {
-        node: `// 1. Install required packages
-// npm install @opentelemetry/sdk-node @opentelemetry/exporter-trace-otlp-http
+node: `// 1. Install the ReplayOS SDK directly from our GitHub repo
+    // npm install github:Arjun586/failure-replay#path:packages/node-sdk
 
-const { NodeSDK } = require('@opentelemetry/sdk-node');
-const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
+    const { ReplayOS } = require('@replayos/node');
 
-const exporter = new OTLPTraceExporter({
-  url: '${ingestUrl}',
-  headers: { 'x-project-id': '${projectId}' }
-});
-
-const sdk = new NodeSDK({
-  traceExporter: exporter,
-  serviceName: 'my-production-api'
-});
-
-sdk.start();
-console.log('Tracing initialized successfully.');`,
-
-        python: `# 1. Install packages
-# pip install opentelemetry-distro opentelemetry-exporter-otlp
-
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
-resource = Resource(attributes={"service.name": "my-production-api"})
-provider = TracerProvider(resource=resource)
-processor = BatchSpanProcessor(OTLPSpanExporter(
-    endpoint="${ingestUrl}",
-    headers={"x-project-id": "${projectId}"}
-))
-provider.add_span_processor(processor)
-trace.set_tracer_provider(provider)
-
-print("Tracing initialized")`
-    };
+    // 2. Initialize the SDK at the top of your main file (e.g., index.js)
+    ReplayOS.init({
+    projectId: '${projectId}',
+    ingestKey: 'your-project-ingest-key', // Retrieve this from Project Settings
+    serviceName: 'my-production-api',
+    ingestUrl: '${ingestUrl}'
+    });`
+    }
 
     const handleCopy = () => {
         navigator.clipboard.writeText(codeSnippets[activeTab]);
