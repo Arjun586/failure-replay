@@ -107,16 +107,17 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                             </div>
 
                             {/* The Waterfall Bar Container */}
+                            {/* The Waterfall Bar Container */}
                             <div className="w-full bg-[#09090b] rounded-md h-5 relative overflow-hidden flex items-center border border-white/5">
                                 <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${widthPercent}%` }}
+                                    
+                                    initial={{ width: 0, left: `${leftOffset}%` }}
+                                    animate={{ width: `${widthPercent}%`, left: `${leftOffset}%` }}
                                     className={`absolute h-full rounded-md border flex items-center px-2 transition-colors ${
                                         isError 
-                                        ? 'bg-red-500/20 border-red-500/50' 
-                                        : 'bg-primary/30 border-primary/50 group-hover:bg-primary/40'
+                                            ? 'bg-red-500/20 border-red-500/50' 
+                                            : 'bg-primary/30 border-primary/50 group-hover:bg-primary/40'
                                     }`}
-                                    style={{ left: `${leftOffset}%` }}
                                 >
                                     <span className="text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap drop-shadow-md">
                                         {duration}ms

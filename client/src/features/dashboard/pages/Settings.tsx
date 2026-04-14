@@ -8,10 +8,8 @@ export default function Settings() {
     const { activeProject } = useAuth();
     const { theme, setTheme } = useTheme();
     const [copied, setCopied] = useState(false);
-
-    // Mock ingest key since it's not exposed in your standard project payload yet, 
-    // but Prisma schema shows Project has 'ingestKey'
-    const ingestKey = activeProject?.id ? `${activeProject.id}-secret-key` : 'No project selected';
+    
+    const ingestKey = activeProject?.ingestKey || 'No project selected';
 
     const handleCopy = () => {
         navigator.clipboard.writeText(ingestKey);

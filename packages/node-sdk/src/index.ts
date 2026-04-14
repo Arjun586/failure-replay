@@ -1,42 +1,83 @@
+// packages/node-sdk/src/index.ts
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-// 1. Import the diagnostic tools
-import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+import { diag, DiagConsoleLogger, DiagLogLevel, trace, Span, SpanStatusCode } from '@opentelemetry/api';
 
 export interface ReplayOSOptions {
-    projectId: string;
-    ingestKey: string;
-    serviceName: string;
+    projectId?: string;
+    ingestKey?: string;
+    serviceName?: string;
     ingestUrl?: string; 
-    debug?: boolean; // 2. Add a debug flag
+    debug?: boolean;
 }
 
+let sdk: NodeSDK | null = null;
+
 export const ReplayOS = {
-    init: (options: ReplayOSOptions) => {
-        
-        // 3. If debug is true, force OTEL to log all internal errors
+    /**
+     * Initializes the ReplayOS SDK. 
+     * Will automatically pick up credentials from environment variables if not provided.
+     */
+    init: (options: ReplayOSOptions = {}) => {
+        const projectId = options.projectId || process.env.REPLAYOS_PROJECT_ID;
+        const ingestKey = options.ingestKey || process.env.REPLAYOS_INGEST_KEY;
+        const serviceName = options.serviceName || process.env.REPLAYOS_SERVICE_NAME || 'unnamed-service';
+
         if (options.debug) {
             diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
         }
 
-        const url = options.ingestUrl || 'http://127.0.0.1:5000/api/traces/v1/traces';
+        if (!projectId || !ingestKey) {
+            console.warn('[ReplayOS] Missing Project ID or Ingest Key. Telemetry is disabled.');
+            return;
+        }
+
+        const url = options.ingestUrl || 'http://localhost:5000/api/traces/v1/traces';
 
         const exporter = new OTLPTraceExporter({
             url: url,
             headers: { 
-                'x-project-id': options.projectId,
-                'x-ingest-key': options.ingestKey
+                'x-project-id': projectId,
+                'x-ingest-key': ingestKey
             }
         });
 
-        const sdk = new NodeSDK({
+        sdk = new NodeSDK({
             traceExporter: exporter,
-            serviceName: options.serviceName,
+            serviceName: serviceName,
             instrumentations: [getNodeAutoInstrumentations()]
         });
 
         sdk.start();
-        console.log(`[ReplayOS] Tracing initialized for ${options.serviceName}`);
+        console.log(`[ReplayOS] 🕵️‍♂️ Observability initialized for: ${serviceName}`);
+    },
+
+    /**
+     * Manually records an error to the current active span.
+     */
+    recordError: (error: Error | string) => {
+        const activeSpan = trace.getActiveSpan();
+        if (activeSpan) {
+            activeSpan.setStatus({ code: SpanStatusCode.ERROR, message: typeof error === 'string' ? error : error.message });
+            activeSpan.recordException(error);
+        }
+    },
+
+    /**
+     * Helper to get the tracer for manual span creation
+     */
+    getTracer: () => {
+        return trace.getTracer('replayos-node-sdk');
+    },
+
+    /**
+     * Ensures all pending traces are sent before the process exits.
+     */
+    shutdown: async () => {
+        if (sdk) {
+            await sdk.shutdown();
+            console.log('[ReplayOS] SDK shut down successfully.');
+        }
     }
 };

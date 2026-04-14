@@ -1,6 +1,6 @@
 {
   "name": "@replayos/node",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "The official Node.js SDK for ReplayOS. Automated OpenTelemetry tracing and incident observability.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

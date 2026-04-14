@@ -14,6 +14,7 @@ import Dashboard from '../features/dashboard/pages/Dashboard';
 import IncidentTimeline from '../features/incidents/pages/IncidentTimeline';
 import Incidents from '../features/incidents/pages/Incidents';
 import Settings from '../features/dashboard/pages/Settings';
+import Documentation from '../features/docs/pages/Documentation';
 
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
                     
                     {/* Empty Routes for sidebar links */}
                     <Route path="/incidents" element={<Incidents />} />
+                    <Route path="/docs" element={<Documentation />} />
                     <Route path="/settings" element={<Settings />} />
                 </Route>
             </Route>

@@ -1,7 +1,8 @@
-import { LayoutDashboard, AlertCircle, Settings, ChevronDown, FolderArchive, Activity, Plus, UserPlus, LogOut } from "lucide-react";
+import { LayoutDashboard, AlertCircle, Settings, ChevronDown,BookOpen, FolderArchive, Activity, Plus, UserPlus, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import InviteTeamModal from '../../features/auth/components/InviteTeamModal';
 import CreateProjectModal from '../../features/projects/components/CreateProjectModal';
@@ -19,6 +20,7 @@ type NavItem = {
 const navItems: NavItem[] = [
     { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { name: "Incidents", icon: AlertCircle, href: '/incidents' },
+    { name: "Documentation", icon: BookOpen, href: '/docs' },
     { name: "Settings", icon: Settings, href: '/settings' },
 ];
 
@@ -57,14 +59,15 @@ export default function Sidebar() {
             
             {/* 1. BRANDING */}
             <div className="p-4 relative">
-                <div className="flex items-center gap-3 px-2 mb-6 mt-2">
+                
+                <Link to="/" className="flex items-center gap-3 px-2 mb-6 mt-2">
                     <div className="w-8 h-8 rounded-lg brand-logo">
                         <Activity size={18} />
                     </div>
                     <h1 className="text-gray-100 font-bold text-lg tracking-wide">
                         Replay<span className="text-primary">OS</span>
                     </h1>
-                </div>
+                </Link>
 
                 {/* 2. PROJECT SWITCHER */}
                 <button 

@@ -17,6 +17,7 @@ export interface Project {
     id: string;
     name: string;
     organizationId: string;
+    ingestKey: string;
 }
 
 export interface AuthContextType {

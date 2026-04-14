@@ -142,9 +142,25 @@ export const getTraceGraph = async (req: Request, res: Response): Promise<void> 
         // Keep track of which service a span belongs to
         const spanServiceMap = new Map<string, string>();
         
+        // 🚀 FIX: Track exact start/end boundaries per service
+        const serviceTimers = new Map<string, { start: number, end: number }>();
+        
         trace.spans.forEach(span => {
             spanServiceMap.set(span.spanId, span.serviceName);
             
+            // Calculate absolute timestamps
+            const start = new Date(span.startTime).getTime();
+            const end = span.endTime ? new Date(span.endTime).getTime() : start + (span.durationMs || 0);
+
+            // Record the earliest start time and latest end time for this service
+            if (!serviceTimers.has(span.serviceName)) {
+                serviceTimers.set(span.serviceName, { start, end });
+            } else {
+                const timer = serviceTimers.get(span.serviceName)!;
+                if (start < timer.start) timer.start = start;
+                if (end > timer.end) timer.end = end;
+            }
+
             if (!nodes.has(span.serviceName)) {
                 nodes.set(span.serviceName, {
                     id: span.serviceName,
@@ -155,10 +171,17 @@ export const getTraceGraph = async (req: Request, res: Response): Promise<void> 
             }
             
             const node = nodes.get(span.serviceName)!;
-            // Aggregate duration and error state at service level
-            node.duration += span.durationMs || 0;
+            
+            // Mark error if ANY span in this service failed
             if (span.status === "ERROR" || span.errorMessage) {
                 node.hasError = true;
+            }
+        });
+
+        // 🚀 Apply the true mathematical duration to the nodes
+        serviceTimers.forEach((timer, service) => {
+            if (nodes.has(service)) {
+                nodes.get(service)!.duration = timer.end - timer.start;
             }
         });
 

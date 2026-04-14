@@ -115,7 +115,6 @@ This project is continually evolving from a single-user MVP into a fully-fledged
 
 ### Must Do before Phase 5
 
-- [ ] **Create a Documentaion Page:** Create a Documentation Page for How to use in project
 - [ ] **Live Working:** Check if All this is working with Live Project
 
 
