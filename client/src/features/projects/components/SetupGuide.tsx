@@ -1,39 +1,59 @@
+// client/src/features/projects/components/SetupGuide.tsx
 import React, { useState } from 'react';
-import { motion} from 'framer-motion';
-import { Copy, CheckCircle2, Terminal, Code2,  X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Copy, CheckCircle2, Terminal, Code2, X } from 'lucide-react';
 
+/**
+ * Interface Definition
+ * projectId: The unique identifier for the project workspace.
+ * ingestKey: The security credential required for trace authentication.
+ * ingestUrl: The endpoint where the SDK transmits OpenTelemetry data.
+ * onClose: Callback function to dismiss the setup modal.
+ */
 interface SetupGuideProps {
     projectId: string;
+    ingestKey: string;
     ingestUrl?: string;
-    ingestKey: string; 
-    onClose: () => void; // 👈 Naya prop modal close karne ke liye
+    onClose: () => void;
 }
 
+/**
+ * SetupGuide Component
+ * Provides an interactive, multi-language walkthrough for instrumenting 
+ * applications with the ReplayOS SDK.
+ */
 export default function SetupGuide({ 
     projectId,
     ingestKey,
     ingestUrl = 'http://localhost:5000/api/traces/v1/traces',
     onClose
 }: SetupGuideProps) {
+    // Local state to manage active documentation tab and clipboard feedback
     const [activeTab, setActiveTab] = useState<'node' | 'python'>('node');
     const [copied, setCopied] = useState(false);
 
-    // ... (Tumhara same codeSnippets object yahan rahega) ...
+    // Configuration object containing the boilerplate code for different runtime environments
     const codeSnippets = {
-node: `// 1. Install the ReplayOS SDK directly from our GitHub repo
-    // npm install github:Arjun586/ReplayOS#path:packages/node-sdk
+        node: `// 1. Install the ReplayOS SDK directly from our GitHub repo
+// npm install github:Arjun586/ReplayOS#path:packages/node-sdk
 
-    const { ReplayOS } = require('@replayos/node');
+const { ReplayOS } = require('@replayos/node');
 
-    // 2. Initialize the SDK at the top of your main file (e.g., index.js)
-    ReplayOS.init({
-    projectId: '${projectId}'
-    ingestKey: '${ingestKey}', // Retrieve this from Project Settings
+// 2. Initialize the SDK at the top of your main file (e.g., index.js)
+ReplayOS.init({
+    projectId: '${projectId}',
+    ingestKey: '${ingestKey}', // Secured key from Project Settings
     serviceName: 'my-production-api',
     ingestUrl: '${ingestUrl}'
-    });`
-    }
+});`,
+        python: `# Python SDK documentation coming soon. 
+# ReplayOS supports OpenTelemetry standard ingestion.`
+    };
 
+    /**
+     * Copies the active code snippet to the system clipboard.
+     * Provides transient visual feedback to confirm the action.
+     */
     const handleCopy = () => {
         navigator.clipboard.writeText(codeSnippets[activeTab]);
         setCopied(true);
@@ -41,15 +61,15 @@ node: `// 1. Install the ReplayOS SDK directly from our GitHub repo
     };
 
     return (
-        // 🚀 FULL SCREEN MODAL OVERLAY
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            {/* Animated Modal Container */}
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 className="w-full max-w-3xl bg-surface border border-surfaceBorder rounded-xl overflow-hidden shadow-2xl relative"
             >
-                {/* 🚀 CLOSE BUTTON */}
+                {/* Close trigger for dismissing the guide */}
                 <button 
                     onClick={onClose}
                     className="absolute top-4 right-4 p-1.5 text-muted hover:text-white hover:bg-surfaceBorder/50 rounded-lg transition-colors z-10"
@@ -57,6 +77,7 @@ node: `// 1. Install the ReplayOS SDK directly from our GitHub repo
                     <X size={20} />
                 </button>
 
+                {/* Header: Instruction and branding */}
                 <div className="p-6 border-b border-surfaceBorder bg-surfaceBorder/10 pr-12">
                     <h3 className="text-xl font-bold text-gray-100 flex items-center gap-2">
                         <Terminal size={20} className="text-primary" /> 
@@ -68,6 +89,7 @@ node: `// 1. Install the ReplayOS SDK directly from our GitHub repo
                 </div>
 
                 <div className="p-6">
+                    {/* Tab Navigation: Switches between supported SDK environments */}
                     <div className="flex items-center gap-4 mb-4">
                         <button
                             onClick={() => setActiveTab('node')}
@@ -91,6 +113,7 @@ node: `// 1. Install the ReplayOS SDK directly from our GitHub repo
                         </button>
                     </div>
 
+                    {/* Code Display: Pre-formatted block with integrated copy-to-clipboard functionality */}
                     <div className="relative group">
                         <div className="absolute top-4 right-4 z-10">
                             <button 
@@ -109,6 +132,7 @@ node: `// 1. Install the ReplayOS SDK directly from our GitHub repo
                         </pre>
                     </div>
                     
+                    {/* Status Indicator: Confirming the workspace is ready for telemetry ingestion */}
                     <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
                         <div className="flex items-start gap-3">
                             <div className="mt-1">

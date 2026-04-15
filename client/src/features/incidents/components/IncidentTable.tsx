@@ -7,6 +7,7 @@ import { useIncidents } from '../hooks/useIncidents';
 import { Skeleton } from '../../../core/components/Skeleton';
 import { useEffect } from 'react';
 
+// Defines the data requirements for the incident list display
 interface IncidentTableProps {
     projectId?: string;
     isLiveMode?: boolean;
@@ -14,18 +15,28 @@ interface IncidentTableProps {
     onDataLoad?: (hasData: boolean) => void;
 }
 
+/**
+ * IncidentTable Component
+ * Renders a structured data table of platform incidents with dynamic styling 
+ * for status and severity. Supports skeleton loading states and live updates.
+ */
 export default function IncidentTable({ onDataLoad, isLiveMode = false, searchParams }: IncidentTableProps) {
     const { activeProject } = useAuth();
     const navigate = useNavigate();
 
+    // Custom hook to fetch incident data based on project context and filter parameters
     const { incidents, isLoading, error } = useIncidents(activeProject?.id, searchParams, isLiveMode);
 
+    // Notifies parent components of the data availability status once loading completes
     useEffect(() => {
         if (!isLoading && onDataLoad) {
             onDataLoad(incidents.length > 0);
         }
     }, [incidents, isLoading, onDataLoad]);
 
+    /**
+     * Maps severity levels to specific CSS color classes for visual priority.
+     */
     const getSeverityColor = (severity: string) => {
         switch (severity?.toLowerCase()) {
             case 'critical': return 'bg-red-500/10 text-red-500 border-red-500/20';
@@ -35,6 +46,9 @@ export default function IncidentTable({ onDataLoad, isLiveMode = false, searchPa
         }
     };
 
+    /**
+     * Returns a configuration object for status-specific styling and iconography.
+     */
     const getStatusStyles = (status: string) => {
         switch (status?.toLowerCase()) {
             case 'resolved': 
@@ -47,11 +61,11 @@ export default function IncidentTable({ onDataLoad, isLiveMode = false, searchPa
         }
     };
 
+    // Displays a dedicated error banner if the data fetch fails
     if (error) {
         return <div className="p-8 text-center text-red-400 bg-red-500/10 rounded-xl border border-red-500/20">{error}</div>;
     }
 
-    // 🚀 Header hamesha dikhega (loading ho, error ho, ya empty ho)
     return (
         <div className="w-full">
             <div className="w-full border border-surfaceBorder rounded-xl overflow-hidden bg-surface shadow-sm">
@@ -64,9 +78,10 @@ export default function IncidentTable({ onDataLoad, isLiveMode = false, searchPa
                             <th className="px-6 py-4 font-medium">Created</th>
                         </tr>
                     </thead>
+                
                     <tbody className="divide-y divide-surfaceBorder/50">
                         
-                        {/* 🚀 SKELETON: Table Row Format */}
+                        {/* SKELETON: Displayed during data fetch to prevent layout shift */}
                         {isLoading && [1, 2, 3, 4, 5].map((index) => (
                             <tr key={`skeleton-${index}`}>
                                 <td className="px-6 py-4">
@@ -81,7 +96,7 @@ export default function IncidentTable({ onDataLoad, isLiveMode = false, searchPa
                             </tr>
                         ))}
 
-                        {/* 🚀 DATA ROWS */}
+                        {/* DATA ROWS: Interactive rows that navigate to detailed incident reports */}
                         {!isLoading && incidents.map((incident) => {
                             const statusStyle = getStatusStyles(incident.status); 
                             
@@ -100,20 +115,20 @@ export default function IncidentTable({ onDataLoad, isLiveMode = false, searchPa
                                         )}
                                         <span className="truncate max-w-[300px]">{incident.title}</span>
                                     </td>
-                                    
+                
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wider border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
                                             {statusStyle.icon} 
                                             {incident.status?.replace('_', ' ').toUpperCase() || 'OPEN'}
                                         </span>
                                     </td>
-                                    
+                    
                                     <td className="px-6 py-4">
                                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getSeverityColor(incident.severity)}`}>
                                             {incident.severity?.toUpperCase() || 'UNKNOWN'}
                                         </span>
                                     </td>
-                                    
+                        
                                     <td className="px-6 py-4 text-muted whitespace-nowrap">
                                         {formatDistanceToNow(new Date(incident.createdAt), { addSuffix: true })}
                                     </td>
@@ -121,7 +136,7 @@ export default function IncidentTable({ onDataLoad, isLiveMode = false, searchPa
                             );
                         })}
 
-                        {/* 🚀 EMPTY STATE */}
+                        {/* EMPTY STATE: Visual feedback when no results match active filters */}
                         {!isLoading && incidents.length === 0 && (
                             <tr>
                                 <td colSpan={4} className="px-6 py-12 text-center text-muted">

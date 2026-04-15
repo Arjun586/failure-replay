@@ -1,13 +1,22 @@
+// client/src/features/docs/pages/Documentation.tsx
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Terminal, Code2, Server, FileText } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 
+/**
+ * Documentation Component
+ * Provides a searchable, tabbed interface for system guides and SDK integration.
+ * Uses a Markdown editor for high-fidelity technical content rendering.
+ */
+
+// Static content definitions for platform guides and technical specifications
 const docsContent = {
     'getting-started': `
 # Getting Started with ReplayOS
 
-Welcome to **ReplayOS**. This platform ingests raw backend logs, OpenTelemetry traces, and bug reports, parsing them asynchronously to reconstruct complex system failures into visual, playable timelines.
+Welcome to **ReplayOS**. 
+This platform ingests raw backend logs, OpenTelemetry traces, and bug reports, parsing them asynchronously to reconstruct complex system failures into visual, playable timelines.
 
 ## Core Concepts
 * **Traces:** The complete journey of a request across all your microservices.
@@ -16,7 +25,7 @@ Welcome to **ReplayOS**. This platform ingests raw backend logs, OpenTelemetry t
 
 ## Next Steps
 Head over to the **SDK Setup** section to instrument your first application!
-    `,
+`,
     'node-sdk': `
 # Node.js SDK Integration
 
@@ -63,7 +72,7 @@ process.on('SIGINT', async () => {
     process.exit(0);
 });
 \`\`\`
-    `,
+`,
     'architecture': `
 # System Architecture
 
@@ -73,19 +82,21 @@ ReplayOS is designed using a decoupled, horizontally scalable architecture to ha
 2. **API Gateway (Express):** Stateless REST API acting as the central traffic router.
 3. **Asynchronous Pipeline:** Background workers extract timestamps, severity levels, and correlation IDs.
 4. **Data Layer (PostgreSQL):** Enforces strict referential integrity between Organizations, Projects, Incidents, and Traces.
-    `
+`
 };
 
 type DocSection = keyof typeof docsContent;
 
 export default function Documentation() {
+    // Tracks the current active documentation tab
     const [activeSection, setActiveSection] = useState<DocSection>('getting-started');
 
-    // Reset scroll position when switching tabs
+    // Automatically scrolls the user to the top of the page when a new section is selected
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [activeSection]);
 
+    // Navigation menu configuration linking documentation keys to visual icons
     const menuItems: { id: DocSection; label: string; icon: React.ElementType }[] = [
         { id: 'getting-started', label: 'Getting Started', icon: BookOpen },
         { id: 'node-sdk', label: 'Node.js SDK', icon: Terminal },
@@ -95,7 +106,7 @@ export default function Documentation() {
     return (
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 pb-12 p-6">
             
-            {/* Left Sidebar - Navigation */}
+            {/* NAVIGATION SIDEBAR: Contains section switches and quick-action tooltips */}
             <aside className="w-full md:w-64 shrink-0">
                 <div className="sticky top-6 space-y-6">
                     <div>
@@ -122,6 +133,7 @@ export default function Documentation() {
                         </nav>
                     </div>
 
+                    {/* CONTEXTUAL CALLOUT: Directs users to finding their project credentials */}
                     <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl">
                         <h4 className="text-sm font-bold text-blue-400 flex items-center gap-2 mb-2">
                             <Code2 size={16} /> Pro Tip
@@ -133,7 +145,7 @@ export default function Documentation() {
                 </div>
             </aside>
 
-            {/* Right Side - Markdown Content */}
+            {/* CONTENT VIEWER: Displays formatted markdown with entry animations */}
             <motion.main 
                 key={activeSection}
                 initial={{ opacity: 0, y: 10 }}

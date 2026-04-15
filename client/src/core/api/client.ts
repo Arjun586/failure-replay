@@ -1,25 +1,26 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 
-// Create a pre-configured Axios instance
+// Initializes a pre-configured Axios instance for global API communication [cite: 4225, 4229]
 export const apiClient: AxiosInstance = axios.create({
-    // Fallback to localhost if the environment variable isn't set
+    // Configures the base URL with a fallback for local development [cite: 4225, 4229]
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-    withCredentials: true, // This is mandatory for cookies to be sent back and forth!
+    // Enables cross-site Access-Control requests using credentials such as cookies [cite: 4225, 4229]
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
-    });
+});
 
-    // Request Interceptor: Attach the JWT token to every outgoing request
-    apiClient.interceptors.request.use(
+// Interceptor to inject the JWT authorization token into every outgoing request [cite: 4226, 4230]
+apiClient.interceptors.request.use(
     (config) => {
-        // 1. Grab the token from localStorage
+        // Retrieves the current session token from local storage [cite: 4226, 4230]
         const token = localStorage.getItem('jwt_token');
         
-        // 2. If it exists, append it to the Authorization header
+        // Appends the token to the Authorization header if it exists [cite: 4226, 4231]
         if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization = `Bearer ${token}`;
         }
         
         return config;
@@ -29,20 +30,18 @@ export const apiClient: AxiosInstance = axios.create({
     }
 );
 
-// Response Interceptor: Handle Global 401 Unauthorized errors
+// Interceptor to handle global 401 Unauthorized errors and session expiration [cite: 4227, 4232]
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        // If the backend rejects the token (e.g., it expired after 7 days)
+        // Automatically clears session data and redirects to login if the token is invalid or expired [cite: 4227]
         if (error.response?.status === 401) {
-        
-            // 1. Clear the dead session data
+            // Removes stale authentication data from local storage [cite: 4227]
             localStorage.removeItem('jwt_token');
             localStorage.removeItem('user');
             localStorage.removeItem('active_org');
             
-            // 2. Force a redirect to the login page
-            // We check the pathname so we don't get stuck in an infinite redirect loop if they are already on /login
+            // Prevents infinite redirect loops by checking the current pathname [cite: 4227]
             if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
                 window.location.href = '/login';
             }

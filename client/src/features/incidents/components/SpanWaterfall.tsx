@@ -7,19 +7,25 @@ import { traceService, type SpanSummary } from '../api/incident.service';
 
 interface SpanWaterfallProps {
     traceId: string;
-    onViewLogs?: (spanId: string) => void; // Deep link handler
+    onViewLogs?: (spanId: string) => void;
 }
 
+/**
+ * SpanWaterfall Component
+ * Visualizes distributed tracing data in a chronological waterfall format.
+ * Includes a slide-over inspector for deep-diving into individual span metadata.
+ */
 export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProps) {
     const [spans, setSpans] = useState<SpanSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(false);
     const [traceStart, setTraceStart] = useState<number>(0);
     const [totalDuration, setTotalDuration] = useState<number>(0);
-    
-    // NEW: State for Slide-over Inspector
     const [selectedSpan, setSelectedSpan] = useState<SpanSummary | null>(null);
 
+    /**
+     * Effect: Fetches trace details and calculates timing offsets for visualization.
+     */
     useEffect(() => {
         const fetchTraceDetails = async () => {
             try {
@@ -52,7 +58,9 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
         fetchTraceDetails();
     }, [traceId]);
 
-    // Handle scroll lock when inspector is open
+    /**
+     * Effect: Manages background scroll locking when the slide-over inspector is active.
+     */
     useEffect(() => {
         if (selectedSpan) document.body.style.overflow = "hidden";
         else document.body.style.overflow = "unset";
@@ -72,6 +80,7 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
 
     return (
         <div className="w-full bg-surface border border-surfaceBorder rounded-xl overflow-hidden shadow-sm relative">
+            {/* Header: Displays trace statistics */}
             <div className="bg-surfaceBorder/30 px-4 py-3 border-b border-surfaceBorder flex items-center justify-between">
                 <h3 className="font-bold text-gray-200 flex items-center gap-2">
                     <Code size={18} className="text-primary" /> Trace Waterfall
@@ -79,6 +88,7 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                 <span className="text-xs text-muted font-mono">{totalDuration}ms Total</span>
             </div>
             
+            {/* Waterfall List: Chronologically ordered span bars */}
             <div className="p-4 space-y-3">
                 {spans.map((span, index) => {
                     const start = new Date(span.startTime).getTime();
@@ -97,7 +107,7 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                             onClick={() => setSelectedSpan(span)}
                             className={`group relative flex flex-col gap-1 text-sm font-mono cursor-pointer rounded-lg p-2 transition-colors border border-transparent ${isActive ? 'bg-primary/5 border-primary/30' : 'hover:bg-surfaceBorder/10 hover:border-surfaceBorder/50'}`}
                         >
-                            {/* Metadata Header */}
+                            {/* Metadata Line */}
                             <div className="flex items-center gap-2 text-xs text-muted z-10">
                                 <Server size={12} className={isError ? 'text-red-400' : 'text-primary'} />
                                 <span className={isError ? 'text-red-400 font-semibold' : 'text-gray-300'}>{span.serviceName}</span>
@@ -106,11 +116,9 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                                 {isError && <AlertCircle size={12} className="text-red-500 ml-auto" />}
                             </div>
 
-                            {/* The Waterfall Bar Container */}
-                            {/* The Waterfall Bar Container */}
+                            {/* Duration Bar */}
                             <div className="w-full bg-[#09090b] rounded-md h-5 relative overflow-hidden flex items-center border border-white/5">
                                 <motion.div 
-                                    
                                     initial={{ width: 0, left: `${leftOffset}%` }}
                                     animate={{ width: `${widthPercent}%`, left: `${leftOffset}%` }}
                                     className={`absolute h-full rounded-md border flex items-center px-2 transition-colors ${
@@ -129,7 +137,7 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                 })}
             </div>
 
-            {/* 🚀 SLIDE-OVER SPAN INSPECTOR */}
+            {/* SLIDE-OVER SPAN INSPECTOR */}
             <AnimatePresence>
                 {selectedSpan && (
                     <>
@@ -157,7 +165,7 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                                {/* Core Info Grid */}
+                                {/* Service Info */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-[#09090b] p-3 rounded-lg border border-surfaceBorder">
                                         <span className="text-xs text-muted font-medium mb-1 block">Service</span>
@@ -190,7 +198,7 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                                     )}
                                 </div>
 
-                                {/* Identifiers */}
+                                {/* Unique Identifiers */}
                                 <div className="space-y-3">
                                     <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2 border-b border-surfaceBorder pb-2">
                                         <Fingerprint size={14} className="text-muted"/> Identifiers
@@ -207,7 +215,7 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                                     )}
                                 </div>
 
-                                {/* Error Context */}
+                                {/* Error Context Display */}
                                 {(selectedSpan.status === 'ERROR' || selectedSpan.errorMessage) && (
                                     <div className="space-y-3">
                                         <h3 className="text-sm font-semibold text-red-400 flex items-center gap-2 border-b border-red-500/20 pb-2">
@@ -220,7 +228,7 @@ export default function SpanWaterfall({ traceId, onViewLogs }: SpanWaterfallProp
                                 )}
                             </div>
 
-                            {/* Deep Link Action */}
+                            {/* Deep Link to Associated Logs */}
                             {onViewLogs && (
                                 <div className="p-5 border-t border-surfaceBorder bg-surfaceBorder/10">
                                     <button 

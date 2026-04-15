@@ -7,29 +7,48 @@ import { apiClient } from '../../../core/api/client';
 import IncidentTable from '../components/IncidentTable';
 import FilterDrawer from '../components/FilterDrawer';
 
+/**
+ * Incidents Page Component
+ * The primary view for monitoring, filtering, and managing system alerts.
+ * Supports a "Live Feed" mode for real-time updates and traffic simulation for testing.
+ */
 export default function Incidents() {
+    // State to trigger a manual re-fetch of the IncidentTable
     const [refreshKey, setRefreshKey] = useState(0);
+    // Tracks the progress of the mock traffic generation request
     const [isSimulating, setIsSimulating] = useState(false);
+    // Controls the visibility of the slide-out filter panel
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     const { activeProject } = useAuth();
     const [searchParams] = useSearchParams();
 
+    // Persists the Live Feed preference to local storage to maintain state across sessions
     const [isLiveMode, setIsLiveMode] = useState(() => {
         const savedMode = localStorage.getItem('replayos_live_mode');
         return savedMode === 'true';
     });
 
+    /**
+     * Effect: Updates local storage whenever the Live Feed state changes.
+     */
     useEffect(() => {
         localStorage.setItem('replayos_live_mode', isLiveMode.toString());
     }, [isLiveMode]);
 
+    /**
+     * Triggers a backend process to generate synthetic incident data.
+     * Useful for demonstrating platform capabilities or testing UI components.
+     */
     const handleSimulateTraffic = async () => {
         if (!activeProject) return;
         setIsSimulating(true);
+
         try {
+            // Posts to the simulation endpoint for the current project
             await apiClient.post(`/projects/${activeProject.id}/simulate`);
-            setRefreshKey(prev => prev + 1); 
+            // Increments the key to force a re-mount/refresh of the table data
+            setRefreshKey(prev => prev + 1);
         } catch (error) {
             console.error("Failed to simulate traffic:", error);
         } finally {
@@ -37,6 +56,7 @@ export default function Incidents() {
         }
     };
 
+    // Derived count of active filters to provide visual feedback on the filter button
     const activeFilterCount = Array.from(searchParams.keys()).length;
 
     return (
@@ -48,7 +68,7 @@ export default function Incidents() {
                 </div>
                 
                 <div className="flex items-center gap-3">
-                    {/* 🚀 LIVE MODE TOGGLE BUTTON */}
+                    {/* LIVE FEED TOGGLE: Switches between static snapshots and real-time polling */}
                     <button 
                         onClick={() => setIsLiveMode(!isLiveMode)}
                         className={`flex items-center gap-2 text-sm px-4 py-2 rounded-lg font-medium transition-all ${
@@ -61,6 +81,7 @@ export default function Incidents() {
                         Live Feed: {isLiveMode ? 'ON' : 'OFF'}
                     </button>
 
+                    {/* FILTER TRIGGER: Opens the FilterDrawer and shows active filter count */}
                     <button 
                         onClick={() => setIsFilterOpen(true)} 
                         className={`flex items-center gap-2 text-sm transition-colors border px-4 py-2 rounded-lg font-medium ${
@@ -72,16 +93,29 @@ export default function Incidents() {
                         <ListFilter size={16} /> 
                         Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
                     </button>
-                    <button onClick={handleSimulateTraffic} disabled={isSimulating || !activeProject} className="flex items-center gap-2 bg-glass border border-primary/50 text-primary hover:bg-primary/10 px-4 py-2 rounded-lg font-medium transition-all shadow-[0_0_15px_rgb(var(--primary)/0.15)] disabled:opacity-50">
+
+                    {/* TRAFFIC SIMULATOR: Manual trigger for generating sample telemetry */}
+                    <button 
+                        onClick={handleSimulateTraffic} 
+                        disabled={isSimulating || !activeProject} 
+                        className="flex items-center gap-2 bg-glass border border-primary/50 text-primary hover:bg-primary/10 px-4 py-2 rounded-lg font-medium transition-all shadow-[0_0_15px_rgb(var(--primary)/0.15)] disabled:opacity-50"
+                    >
                         {isSimulating ? <Loader2 size={16} className="animate-spin" /> : <Activity size={16} />}
                         Simulate Traffic
                     </button>
                 </div>
             </header>
-            {/* 🚀 The Filter Drawer */}
+
+            {/* Slide-out drawer for managing complex search and filter queries */}
             <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
 
-            <IncidentTable projectId={activeProject?.id} key={refreshKey} isLiveMode={isLiveMode} searchParams={searchParams} />
+            {/* Main data display layer */}
+            <IncidentTable 
+                projectId={activeProject?.id} 
+                key={refreshKey} 
+                isLiveMode={isLiveMode} 
+                searchParams={searchParams} 
+            />
         </div>
     );
 }

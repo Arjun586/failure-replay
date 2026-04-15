@@ -1,18 +1,22 @@
+// client/src/app/Landing.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { TerminalSquare, ShieldAlert, GitMerge, ChevronRight, Activity, Zap, Server, Code, ArrowRight, Palette } from 'lucide-react';
 import { useTheme } from '../core/context/theme';
 
-// Theme Switcher Dropdown Component
+// Manages the application-wide theme selection dropdown
 function ThemeDropdown() {
+    // Accesses global theme state and update functions
     const { theme, setTheme } = useTheme();
     
     return (
         <div className="relative group z-50">
+            {/* Primary button to toggle the theme menu visibility */}
             <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-surface/50 border border-surfaceBorder hover:border-primary/50 transition-all text-muted hover:text-gray-100">
                 <Palette size={18} />
             </button>
+            {/* Animated dropdown list containing available theme options */}
             <div className="absolute right-0 top-full mt-2 w-40 bg-surface border border-surfaceBorder rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col p-1.5">
                 {[
                     { id: 'purple', label: 'Purple', color: 'bg-[#8b5cf6]' },
@@ -22,6 +26,7 @@ function ThemeDropdown() {
                 ].map(t => (
                     <button
                         key={t.id}
+                        // Updates the application theme when a specific option is clicked
                         onClick={() => setTheme(t.id as any)}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${theme === t.id ? 'bg-primary/10 text-primary font-medium' : 'text-gray-300 hover:bg-surfaceBorder/50'}`}
                     >
@@ -34,11 +39,13 @@ function ThemeDropdown() {
     );
 }
 
+// Renders a card with a dynamic radial spotlight effect that follows the mouse
 function SpotlightCard({ children, className = "", solid = false }: { children: React.ReactNode, className?: string, solid?: boolean }) {
     const divRef = useRef<HTMLDivElement>(null);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [opacity, setOpacity] = useState(0);
 
+    // Updates the spotlight position based on mouse coordinates relative to the card
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!divRef.current) return;
         const rect = divRef.current.getBoundingClientRect();
@@ -54,6 +61,7 @@ function SpotlightCard({ children, className = "", solid = false }: { children: 
             className={`relative overflow-hidden border border-glassBorder rounded-2xl transition-colors duration-300 ${solid ? 'bg-surface' : 'bg-glass backdrop-blur-glass'} ${className}`}
             whileHover={{ y: -5, borderColor: 'rgb(var(--primary) / 0.5)', boxShadow: '0 10px 30px -10px rgb(var(--primary) / 0.2)' }}
         >
+            {/* The radial gradient layer that creates the spotlight visual */}
             <div
                 className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-500 ease-in-out"
                 style={{
@@ -66,11 +74,14 @@ function SpotlightCard({ children, className = "", solid = false }: { children: 
     );
 }
 
+// The main landing page component containing the hero section, features, and marketing content
 export default function Landing() {
     const [activeLog, setActiveLog] = useState(0);
     const { scrollYProgress } = useScroll();
+    // Maps the scroll progress to a vertical offset for the hero section parallax effect
     const yHero = useTransform(scrollYProgress, [0, 1], [0, 200]);
 
+    // Sets up a periodic interval to animate the simulated log terminal
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveLog((prev) => (prev + 1) % 6);
@@ -78,6 +89,7 @@ export default function Landing() {
         return () => clearInterval(interval);
     }, []);
 
+    // Configuration for the primary platform feature descriptions
     const features = [
         { icon: Activity, title: 'Asynchronous Parsing', desc: 'Process 50MB+ log files in the background without blocking the Node.js event loop.' },
         { icon: GitMerge, title: 'Trace Stitching', desc: 'Reconstruct the exact path of failing requests across your entire microservice fleet.' },
@@ -85,6 +97,7 @@ export default function Landing() {
         { icon: Zap, title: 'Optimistic UI', desc: 'Lightning-fast navigation powered by Vite, React, and hardware-accelerated Framer Motion.' }
     ];
 
+    // Data for the interactive terminal simulation on the landing page
     const logs = [
         { time: '10:00:15.241', level: 'INFO', text: '[gateway] System initialized on port 8080', color: 'text-blue-400' },
         { time: '10:00:22.019', level: 'WARN', text: '[auth-svc] High latency detected on DB-01', color: 'text-yellow-400' },
@@ -97,11 +110,12 @@ export default function Landing() {
     return (
         <div className="min-h-screen bg-background text-gray-100 overflow-x-hidden font-sans relative selection:bg-primary/30 transition-colors duration-500">
             
+            {/* Background pattern and gradient decorations */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
-            
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] pointer-events-none transition-colors duration-500"></div>
             <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none"></div>
 
+            {/* Sticky navigation header with branding and theme switcher */}
             <nav className="fixed top-0 left-0 right-0 w-full border-b border-glassBorder bg-surface/80 backdrop-blur-md z-50 shadow-sm transition-colors duration-500">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2 group cursor-pointer">
@@ -118,11 +132,13 @@ export default function Landing() {
                 </div>
             </nav>
 
+            {/* Main hero section featuring marketing copy and the terminal visual */}
             <main className="pt-40 pb-20 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative z-10">
                 <motion.div 
                     style={{ y: yHero }}
                     className="flex-1 text-center lg:text-left z-10"
                 >
+                    {/* Animated badge indicating platform status */}
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
                         className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-glass backdrop-blur-md border border-primary/30 text-primary text-sm font-medium mb-6 cursor-default hover:bg-primary/20 transition-colors shadow-[0_0_15px_rgb(var(--primary)/0.15)]"
@@ -131,6 +147,7 @@ export default function Landing() {
                         ReplayOS v1.0 is Live
                     </motion.div>
                     
+                    {/* High-impact headline text */}
                     <motion.h1 
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
                         className="text-6xl lg:text-8xl font-extrabold tracking-tight mb-6 leading-[1.1]"
@@ -141,6 +158,7 @@ export default function Landing() {
                         </span>
                     </motion.h1>
                     
+                    {/* Primary value proposition paragraph */}
                     <motion.p 
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
                         className="text-lg lg:text-xl text-muted mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
@@ -148,6 +166,7 @@ export default function Landing() {
                         The enterprise-grade observability platform that ingests raw logs, reconstructs complex microservice failures, and generates playable timelines for instant root-cause analysis.
                     </motion.p>
                     
+                    {/* Primary call-to-action links */}
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
                         className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
@@ -161,11 +180,13 @@ export default function Landing() {
                     </motion.div>
                 </motion.div>
 
+                {/* Simulated log terminal visualization component */}
                 <motion.div 
                     initial={{ opacity: 0, rotateX: 20, y: 40 }} animate={{ opacity: 1, rotateX: 0, y: 0 }} transition={{ duration: 0.8, type: "spring" }}
                     className="flex-1 w-full max-w-2xl perspective-1000 z-10 group"
                 >
                     <div className="bg-background/40 backdrop-blur-xl border border-glassBorder rounded-2xl shadow-2xl relative overflow-hidden transform-gpu transition-all duration-500 group-hover:border-primary/50 group-hover:shadow-[0_0_50px_rgb(var(--primary)/0.2)] group-hover:-translate-y-2">
+                        {/* Terminal window header */}
                         <div className="bg-glass border-b border-glassBorder px-4 py-3 flex items-center gap-2">
                             <div className="flex gap-2">
                                 <div className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-400 transition-colors cursor-pointer"></div>
@@ -177,12 +198,14 @@ export default function Landing() {
                             </div>
                         </div>
                         
+                        {/* Dynamic terminal line output area */}
                         <div className="p-6 h-[320px] overflow-hidden relative">
                             <div className="space-y-4 font-mono text-sm">
                                 {logs.map((log, i) => (
                                     <motion.div 
                                         key={i}
                                         initial={{ opacity: 0, x: -20 }}
+                                        // Staggers the visibility of log lines based on the active log state
                                         animate={{ 
                                             opacity: i <= activeLog ? (i === activeLog ? 1 : 0.4) : 0, 
                                             x: i <= activeLog ? 0 : -20,
@@ -201,6 +224,7 @@ export default function Landing() {
                         </div>
                     </div>
 
+                    {/* Floating metric badges for social proof */}
                     <motion.div 
                         initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1 }}
                         className="absolute -right-8 top-20 bg-glass backdrop-blur-glass border border-glassBorder px-4 py-2 rounded-xl shadow-xl flex items-center gap-3 hover:scale-110 transition-transform cursor-default"
@@ -219,6 +243,7 @@ export default function Landing() {
                 </motion.div>
             </main>
 
+            {/* How-it-works section with a visual process timeline */}
             <section className="py-24 relative z-10">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-20">
@@ -237,6 +262,7 @@ export default function Landing() {
                     </div>
 
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 relative">
+                        {/* Connecting line visual between process steps */}
                         <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-surfaceBorder -z-10">
                             <motion.div 
                                 initial={{ width: "0%" }} whileInView={{ width: "100%" }} viewport={{ once: true }} transition={{ duration: 1.5, ease: "easeInOut" }}
@@ -244,6 +270,7 @@ export default function Landing() {
                             ></motion.div>
                         </div>
 
+                        {/* Interactive cards detailing each step of the pipeline */}
                         {['1. Ingest Raw Logs', '2. Stitch Traces', '3. Visual Replay'].map((step, i) => (
                             <SpotlightCard key={i} solid={true} className="p-8 w-full md:w-[30%] text-center shadow-xl">
                                 <div className="w-16 h-16 mx-auto bg-background border border-glassBorder rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgb(var(--primary)/0.15)] text-primary">
@@ -261,6 +288,7 @@ export default function Landing() {
                 </div>
             </section>
 
+            {/* Grid display for platform features and capabilities */}
             <section className="py-24 relative z-10">
                 <div className="absolute inset-0 bg-glass backdrop-blur-sm border-t border-b border-glassBorder z-0"></div>
                 <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -272,12 +300,9 @@ export default function Landing() {
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {features.map((feature, i) => (
                             <SpotlightCard key={i} className="p-6 group cursor-default shadow-lg">
-                                
-                                {/* 🚀 Sirf is div ki classes update hui hain */}
                                 <div className="w-12 h-12 rounded-xl mb-6 theme-icon-box group-hover:scale-110 group-hover:bg-primary group-hover:text-white group-hover:shadow-[0_0_20px_rgba(var(--primary),0.5)] transition-all duration-300">
                                     <feature.icon size={24} />
                                 </div>
-                                
                                 <h3 className="text-lg font-bold mb-3 text-gray-100">{feature.title}</h3>
                                 <p className="text-muted text-sm leading-relaxed">{feature.desc}</p>
                             </SpotlightCard>
@@ -286,6 +311,7 @@ export default function Landing() {
                 </div>
             </section>
 
+            {/* Final CTA section to drive new registrations */}
             <section className="py-32 relative z-10 overflow-hidden">
                 <div className="absolute inset-0 bg-primary/5 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none transition-colors duration-500"></div>
                 <div className="max-w-4xl mx-auto px-6 text-center">
@@ -312,6 +338,7 @@ export default function Landing() {
                 </div>
             </section>
 
+            {/* Global application footer with copyright and project meta info */}
             <footer className="border-t border-glassBorder bg-glass backdrop-blur-md py-8 text-center text-muted text-sm relative z-10 transition-colors duration-500">
                 <p>© {new Date().getFullYear()} ReplayOS. Built for developers, by developers.</p>
             </footer>

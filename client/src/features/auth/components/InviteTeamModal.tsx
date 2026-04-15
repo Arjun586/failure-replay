@@ -5,14 +5,17 @@ import { apiClient } from '../../../core/api/client';
 import { useAuth } from '../../../core/context/auth';
 import { isAxiosError } from 'axios';
 
+// Defines the component props for the team invitation modal
 interface InviteTeamModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
+// Manages the team invitation flow including data submission and link generation
 export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProps) {
     const { activeOrganization } = useAuth();
     
+    // Initializes local state for form inputs, loading status, and error handling
     const [email, setEmail] = useState('');
     const [role, setRole] = useState<'ADMIN' | 'MEMBER'>('MEMBER');
     const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +23,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
     const [inviteLink, setInviteLink] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
+    // Processes the invitation submission and retrieves a secure link from the API
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!activeOrganization) return;
@@ -34,11 +38,13 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
                 organizationId: activeOrganization.id
             });
 
-            // The backend returns the generated link in the data object
+            // Persists the generated invitation link returned by the backend
             setInviteLink(response.data.data.inviteLink);
         } catch (err) {
             if (isAxiosError(err)) {
                 const errData = err.response?.data?.error;
+
+                // Dynamically extracts error messages from Zod arrays or string responses
                 if (Array.isArray(errData)) {
                     setError(errData[0].message);
                 } else if (typeof errData === 'string') {
@@ -54,6 +60,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
         }
     };
 
+    // Copies the generated invitation link to the system clipboard
     const handleCopy = () => {
         if (inviteLink) {
             navigator.clipboard.writeText(inviteLink);
@@ -62,6 +69,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
         }
     };
 
+    // Resets the modal state to allow for multiple subsequent invitations
     const handleReset = () => {
         setInviteLink(null);
         setEmail('');
@@ -73,7 +81,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    {/* Backdrop */}
+                    {/* Backdrop: Provides a blurred overlay behind the modal */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -82,14 +90,14 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
                         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
                     />
 
-                    {/* Modal */}
+                    {/* Modal Container: Animates from the bottom with a spring transition */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         className="relative w-full max-w-md bg-surface border border-surfaceBorder rounded-xl shadow-2xl flex flex-col overflow-hidden"
                     >
-                        {/* Header */}
+                        {/* Header: Displays the title and close action */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-surfaceBorder bg-surface/50">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
@@ -105,8 +113,9 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
                             </button>
                         </div>
 
-                        {/* Content */}
+                        {/* Content: Renders either the entry form or the success state */}
                         <div className="p-6">
+                            {/* Error Banner: Conditional display for validation or server failures */}
                             {error && (
                                 <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg mb-6 flex items-start gap-2 text-sm">
                                     <AlertCircle size={16} className="shrink-0 mt-0.5" />
@@ -116,6 +125,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
 
                             {!inviteLink ? (
                                 <form onSubmit={handleSubmit} className="space-y-4">
+                                    {/* Email Field: Collects the recipient's destination address */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-300 mb-1.5">Email Address</label>
                                         <input
@@ -128,6 +138,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
                                         />
                                     </div>
 
+                                    {/* Role Selection: Determines the access level for the new member */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-300 mb-1.5">Role</label>
                                         <select
@@ -140,6 +151,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
                                         </select>
                                     </div>
 
+                                    {/* Submit Button: Triggers the invitation creation request */}
                                     <button
                                         type="submit"
                                         disabled={isLoading || !email}
@@ -154,6 +166,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
                                     </button>
                                 </form>
                             ) : (
+                                /* Success State: Displays the shareable invitation link */
                                 <motion.div 
                                     initial={{ opacity: 0, scale: 0.9 }} 
                                     animate={{ opacity: 1, scale: 1 }} 
@@ -167,6 +180,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
                                         Share this secure link with the user. It will expire in 7 days.
                                     </p>
                                     
+                                    {/* Link Container: Provides a read-only view and copy functionality */}
                                     <div className="w-full flex items-center gap-2 bg-[#09090b] border border-surfaceBorder rounded-lg p-2 mb-6">
                                         <input 
                                             type="text" 
@@ -183,6 +197,7 @@ export default function InviteTeamModal({ isOpen, onClose }: InviteTeamModalProp
                                         </button>
                                     </div>
 
+                                    {/* Reset Trigger: Reverts the modal to the form state */}
                                     <button
                                         onClick={handleReset}
                                         className="text-sm text-primary hover:text-primary-hover transition-colors font-medium"
