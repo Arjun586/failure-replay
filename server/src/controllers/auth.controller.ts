@@ -1,23 +1,27 @@
-// Attach JWT to HttpOnly cookies and remove from JSON response
+// server/src/controllers/auth.controller.ts
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { registerSchema, loginSchema } from '../validations/auth.schema';
 
+// Initializes the Prisma client for database interaction [cite: 1259]
 const prisma = new PrismaClient();
+// Retrieves the secret key for signing JSON Web Tokens from environment variables [cite: 1260]
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
+// Ensures the application terminates if the critical JWT_SECRET is missing [cite: 1261]
 if (!JWT_SECRET) {
     throw new Error('FATAL ERROR: JWT_SECRET environment variable is not defined.');
 }
 
+// Handles new user registration, including organization and default project setup [cite: 1262]
 export const register = async (req: Request, res: Response) => {
     try {
-        // 1. Validate Input
+        // Validates incoming request data against the registration schema [cite: 1262]
         const data = registerSchema.parse(req.body);
 
-        // 2. Check for existing user
+        // Checks the database to prevent duplicate registrations with the same email [cite: 1263]
         const existingUser = await prisma.user.findUnique({ 
             where: { email: data.email } 
         });
@@ -26,10 +30,10 @@ export const register = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'User with this email already exists' });
         }
 
-        // 3. Hash Password
+        // Hashes the user's password using bcrypt for secure storage [cite: 1265]
         const passwordHash = await bcrypt.hash(data.password, 10);
 
-        // 4. Atomic Nested Write: Create User -> OrgMember -> Organization -> Project
+        // Executes an atomic transaction to create the user, organization, and a default project [cite: 1266]
         const user = await prisma.user.create({
             data: {
                 email: data.email,
@@ -37,14 +41,14 @@ export const register = async (req: Request, res: Response) => {
                 name: data.name,
                 memberships: {
                     create: {
-                        role: 'ADMIN', // First user is the admin
+                        role: 'ADMIN', 
                         organization: {
                             create: {
                                 name: data.organizationName,
                                 slug: data.organizationName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
                                 projects: {
                                     create: {
-                                        name: 'Default Project' // Give them an immediate workspace
+                                        name: 'Default Project' 
                                     }
                                 }
                             }
@@ -52,7 +56,7 @@ export const register = async (req: Request, res: Response) => {
                     }
                 }
             },
-            // Include memberships in the response so we have the newly generated Org ID
+            // Includes membership and organization details in the returned user object [cite: 1271, 1272]
             include: {
                 memberships: {
                     include: {
@@ -62,14 +66,14 @@ export const register = async (req: Request, res: Response) => {
             }
         });
 
-        // 5. Generate JWT
+        // Generates a JWT valid for 7 days upon successful registration [cite: 1274]
         const token = jwt.sign(
             { id: user.id, email: user.email }, 
             JWT_SECRET, 
             { expiresIn: '7d' }
         );
 
-        // Extract the primary organization for the client response
+        // Identifies the primary organization for the client-side session [cite: 1275]
         const primaryOrg = user.memberships?.[0]
             ? {
                 ...user.memberships[0].organization,
@@ -77,20 +81,22 @@ export const register = async (req: Request, res: Response) => {
             }
             : null;
 
-        // Set HttpOnly cookie
+        // Securely attaches the JWT to an HttpOnly cookie [cite: 1277]
         res.cookie('jwt_token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000 
         });
 
+        // Returns user and organization metadata to the client [cite: 1278]
         return res.status(201).json({
             user: { id: user.id, email: user.email, name: user.name },
             organization: primaryOrg
         });
 
     } catch (error: any) {
+        // Catches and formats Zod validation errors [cite: 1279]
         if (error.name === 'ZodError') {
             return res.status(400).json({ error: error.errors });
         }
@@ -98,11 +104,13 @@ export const register = async (req: Request, res: Response) => {
     }
 };
 
+// Authenticates existing users and establishes a secure session [cite: 1281]
 export const login = async (req: Request, res: Response) => {
     try {
+        // Validates credentials against the login schema [cite: 1281]
         const data = loginSchema.parse(req.body);
 
-        // 1. Find User
+        // Attempts to locate the user by email including their organization memberships [cite: 1282]
         const user = await prisma.user.findUnique({ 
             where: { email: data.email },
             include: {
@@ -116,30 +124,31 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // 2. Verify Password
+        // Compares the provided password with the stored hash [cite: 1285]
         const isValidPassword = await bcrypt.compare(data.password, user.passwordHash);
         if (!isValidPassword) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // 3. Generate JWT
+        // Signs a new JWT for the authenticated session [cite: 1287]
         const token = jwt.sign(
             { id: user.id, email: user.email }, 
             JWT_SECRET, 
             { expiresIn: '7d' }
         );
 
+        // Formats organization data for the response [cite: 1288]
         const organizations = user.memberships?.map(m => ({
             ...m.organization,
             role: m.role
         })) || [];
 
-        // Set HttpOnly cookie
+        // Updates the HttpOnly cookie with the new session token [cite: 1289]
         res.cookie('jwt_token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000 
         });
 
         return res.status(200).json({
@@ -155,8 +164,8 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
+// Terminates the user session by clearing the authentication cookie [cite: 1293]
 export const logout = async (req: Request, res: Response) => {
-    // Clear the HttpOnly cookie
     res.clearCookie('jwt_token', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

@@ -1,4 +1,4 @@
-
+// server/src/controllers/project.controller.ts
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { createProjectSchema } from '../validations/project.schema';
@@ -6,15 +6,18 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { ingestTrace } from '../services/trace.service';
 
+// Retrieves all projects associated with a specific organization ID
 export const getProjects = async (req: Request, res: Response): Promise<void> => {
     try {
         const { orgId } = req.query;
 
+        // Validates that the organization ID is present and formatted as a string
         if (!orgId || typeof orgId !== 'string') {
             res.status(400).json({ success: false, message: "Organization ID is required" });
             return;
         }
 
+        // Fetches projects for the organization, ordered by their creation date
         const projects = await prisma.project.findMany({
             where: {
                 organizationId: orgId
@@ -31,12 +34,13 @@ export const getProjects = async (req: Request, res: Response): Promise<void> =>
     }
 };
 
+// Creates a new project within a validated organization
 export const createProject = async (req: Request, res: Response): Promise<void> => {
     try {
-        // Validate request body
+        // Validates the incoming project data against the defined schema
         const validatedData = createProjectSchema.parse(req.body);
 
-        // Optional: Ensure the organization actually exists before creating the project
+        // Ensures the target organization exists before attempting to link a project
         const orgExists = await prisma.organization.findUnique({
             where: { id: validatedData.organizationId }
         });
@@ -46,6 +50,7 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
+        // Persists the new project record in the PostgreSQL database
         const project = await prisma.project.create({
             data: {
                 name: validatedData.name,
@@ -55,6 +60,7 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
 
         res.status(201).json({ success: true, data: project });
     } catch (error) {
+        // Formats and returns Zod-specific validation errors
         if (error instanceof z.ZodError) {
             res.status(400).json({ success: false, errors: error.issues });
             return;
@@ -64,23 +70,22 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
     }
 };
 
-
-// server/src/controllers/project.controller.ts
+// Generates a complex mock incident with distributed traces for system testing
 export const simulateTraffic = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id: projectId } = req.params;
 
-        // 1. Verify project exists
+        // Verifies the project's existence before generating simulated telemetry
         const project = await prisma.project.findUnique({ where: { id: projectId } });
+
         if (!project) {
             res.status(404).json({ success: false, message: "Project not found" });
             return;
         }
 
+        // Generates unique identifiers for the simulated trace and its nested spans
         const customTraceId = crypto.randomBytes(16).toString('hex');
         const now = Date.now();
-
-        // 2. Pre-generate span IDs to match the new Microservice Saga architecture
         const gatewaySpanId = crypto.randomBytes(8).toString('hex');
         const authSpanId = crypto.randomBytes(8).toString('hex');
         const orchestratorSpanId = crypto.randomBytes(8).toString('hex');
@@ -94,7 +99,7 @@ export const simulateTraffic = async (req: Request, res: Response): Promise<void
         const postgresSpanId = crypto.randomBytes(8).toString('hex');
         const notificationSpanId = crypto.randomBytes(8).toString('hex');
 
-        // 3. Ingest Trace first and capture the saved record to get internal DB ID
+        // Ingests the simulated trace structure to build a multi-service saga timeline
         const savedTrace = await ingestTrace({
             traceId: customTraceId,
             projectId,
@@ -102,7 +107,7 @@ export const simulateTraffic = async (req: Request, res: Response): Promise<void
             rootOperation: 'POST /api/v2/checkout/process',
             status: 'ERROR',
             startedAt: new Date(now),
-            endedAt: new Date(now + 26000), // Updated to match the 26s total duration
+            endedAt: new Date(now + 26000), 
             spans: [
                 {
                     spanId: gatewaySpanId,
@@ -218,15 +223,16 @@ export const simulateTraffic = async (req: Request, res: Response): Promise<void
             ]
         });
 
+        // Throws an error if the trace engine fails to persist the simulated data
         if (!savedTrace) throw new Error("Trace failed to save");
 
-        // 4. Find the internal DB ID for the failure spans
+        // Maps the generated span IDs to their assigned internal database UUIDs
         const dbGatewaySpan = await prisma.span.findUnique({ where: { spanId: gatewaySpanId } });
         const dbOrchestratorSpan = await prisma.span.findUnique({ where: { spanId: orchestratorSpanId } });
         const dbPaymentSpan = await prisma.span.findUnique({ where: { spanId: paymentSpanId } });
         const dbPostgresSpan = await prisma.span.findUnique({ where: { spanId: postgresSpanId } });
 
-        // 5. Generate Incident and Link with savedTrace.id (Internal DB UUID)
+        // Clusters the simulated events into a single critical incident linked to the trace
         await prisma.incident.create({
             data: {
                 title: "Severity 1: Saga Rollback Failure (Order #99102)",
@@ -271,11 +277,12 @@ export const simulateTraffic = async (req: Request, res: Response): Promise<void
     }
 };
 
+// Identifies all unique service names currently sending logs or traces to a project
 export const getProjectServices = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id: projectId } = req.params;
 
-        // Prisma ka 'distinct' use karke unique service names nikal rahe hain
+        // Extracts unique service identifiers from the project's log history
         const uniqueServices = await prisma.logEvent.findMany({
             where: {
                 incident: {
@@ -286,7 +293,7 @@ export const getProjectServices = async (req: Request, res: Response): Promise<v
             distinct: ['service']
         });
 
-        // Array of objects ko simple string array mein convert karna aur nulls hatana
+        // Filters and flattens the result into a clean string array for the client
         const services = uniqueServices
             .map(s => s.service)
             .filter((s): s is string => Boolean(s));

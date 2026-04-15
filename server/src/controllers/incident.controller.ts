@@ -3,19 +3,21 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 
-// 1. Update Schema: Ab hum ensure kar rahe hain ki projectId request mein aana hi chahiye
+// Defines the schema for incident creation, making Project ID a mandatory UUID
 const createIncidentSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters long"),
     description: z.string().optional(),
     severity: z.enum(['low', 'medium', 'high', 'critical']).default('high'),
-    projectId: z.string().uuid("Invalid Project ID"), // 👈 NEW: Project ID is mandatory
+    projectId: z.string().uuid("Invalid Project ID"), 
 });
 
+// Handles the creation of a new incident linked to a specific project
 export const createIncident = async (req: Request, res: Response): Promise<void> => {
     try {
+        // Validates the request body against the defined Zod schema
         const validatedData = createIncidentSchema.parse(req.body);
 
-        // 2. Verify: Check karo ki ye project database mein sach mein exist karta hai ya nahi
+        // Verifies the existence of the project in the database before proceeding
         const projectExists = await prisma.project.findUnique({
             where: { id: validatedData.projectId }
         });
@@ -25,13 +27,13 @@ export const createIncident = async (req: Request, res: Response): Promise<void>
             return;
         }
 
-        // 3. Save: Incident ko specifically usi project se link karo
+        // Persists the incident specifically linked to the provided project ID
         const incident = await prisma.incident.create({
             data: {
                 title: validatedData.title,
                 description: validatedData.description,
                 severity: validatedData.severity,
-                projectId: validatedData.projectId, // 👈 Exact Project ID passed from frontend
+                projectId: validatedData.projectId, 
             },
         });
 
@@ -49,7 +51,7 @@ export const createIncident = async (req: Request, res: Response): Promise<void>
     }
 };
 
-// server/src/controllers/incident.controller.ts
+// Retrieves incidents based on project ID and various optional filters like severity and status
 export const getIncidents = async (req: Request, res: Response): Promise<void> => {
     try {
         const projectId = req.query.projectId as string | undefined;
@@ -59,27 +61,22 @@ export const getIncidents = async (req: Request, res: Response): Promise<void> =
         const timeRange = req.query.timeRange as string | undefined;
         const service = req.query.service as string | undefined;
 
-        // Ab TypeScript ko pata hai ki yeh pakka string hain
+        // Initializes the filter clause with the mandatory project ID
         const whereClause: any = { projectId: projectId };
 
+        // Appends multi-select filters for severity and status if provided
         if (severity) {
             whereClause.severity = { in: severity.split(',') };
         }
         if (status) {
             whereClause.status = { in: status.split(',') };
         }
-        if (service) {
-            whereClause.events = {
-                some: { service: { in: service.split(',') } }
-            };
-        }
 
-        // Naya "Deep Search" Code
+        // Implements "Deep Search" across incident titles, descriptions, and related logs or traces
         if (search) {
             whereClause.OR = [
                 { title: { contains: search, mode: 'insensitive' } },
                 { description: { contains: search, mode: 'insensitive' } },
-                // 🚀 Schema ke hisaab se relational deep search
                 {
                     events: {
                         some: {
@@ -98,7 +95,7 @@ export const getIncidents = async (req: Request, res: Response): Promise<void> =
             ];
         }
 
-        // Handle Temporal (Time-based) filtering
+        // Filters incidents based on temporal ranges like 15m, 1h, 24h, or 7d
         if (timeRange && typeof timeRange === 'string') {
             const now = new Date();
             let cutoff = new Date();
@@ -107,18 +104,17 @@ export const getIncidents = async (req: Request, res: Response): Promise<void> =
             else if (timeRange === '1h') cutoff.setHours(now.getHours() - 1);
             else if (timeRange === '24h') cutoff.setHours(now.getHours() - 24);
             else if (timeRange === '7d') cutoff.setDate(now.getDate() - 7);
-
             whereClause.createdAt = { gte: cutoff };
         }
 
-        // Handle Cross-Service Filtering (Relational Query!)
+        // Filters by specific microservices involved in the log events
         if (service && typeof service === 'string') {
             whereClause.events = {
                 some: { service: { in: service.split(',') } }
             };
         }
 
-        // 2. Execute Query
+        // Executes the query with results ordered by the most recent creation date
         const incidents = await prisma.incident.findMany({
             where: whereClause,
             orderBy: { createdAt: 'desc' },
@@ -131,8 +127,8 @@ export const getIncidents = async (req: Request, res: Response): Promise<void> =
     }
 };
 
+// Fetches a detailed incident view including metadata and all associated log events
 export const getIncidentTimeline = async (req: Request, res: Response): Promise<void> => {
-    // ... (Your existing getIncidentTimeline code is also fine! Keep it as is.)
     try {
         const { id } = req.params;
 
@@ -141,6 +137,7 @@ export const getIncidentTimeline = async (req: Request, res: Response): Promise<
             return;
         }
 
+        // Retrieves incident details including nested traces and spans for comprehensive visibility
         const incident = await prisma.incident.findUnique({
             where: { id },
             include: {
@@ -153,7 +150,7 @@ export const getIncidentTimeline = async (req: Request, res: Response): Promise<
                 },
                 project: true
             }
-        })
+        });
 
         if (!incident) {
             res.status(404).json({ success: false, message: 'Incident not found' });
@@ -167,23 +164,23 @@ export const getIncidentTimeline = async (req: Request, res: Response): Promise<
     }
 };
 
-
-// Add this below your existing getIncidentTimeline function
+// Retrieves log events for an incident using cursor-based pagination for scalability
 export const getIncidentLogs = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { id } = req.params; // Incident ID
-        const { cursor } = req.query; // The ID of the last log we fetched
-        const limit = 50; // How many logs to fetch per request
+        const { id } = req.params;
+        const { cursor } = req.query;
+        const limit = 50;
 
         if (!id || typeof id !== 'string') {
             res.status(400).json({ success: false, message: 'Invalid incident ID' });
             return;
         }
 
+        // Fetches a limited batch of logs, optionally skipping the cursor item if present
         const logs = await prisma.logEvent.findMany({
             where: { incidentId: id },
             take: limit,
-            skip: cursor ? 1 : 0, // If we have a cursor, skip the cursor item itself
+            skip: cursor ? 1 : 0, 
             ...(cursor && { cursor: { id: String(cursor) } }),
             orderBy: { timestamp: "asc" },
             include: {
@@ -192,7 +189,7 @@ export const getIncidentLogs = async (req: Request, res: Response): Promise<void
             }
         });
 
-        // Determine the next cursor
+        // Identifies the ID of the last record to be used as the next pagination cursor
         const nextCursor = logs.length === limit ? logs[logs.length - 1].id : null;
 
         res.status(200).json({ 
@@ -206,22 +203,21 @@ export const getIncidentLogs = async (req: Request, res: Response): Promise<void
     }
 };
 
-
+// Updates an incident's status while performing RBAC checks at the organization level
 export const updateIncidentStatus = async (req: Request, res: Response): Promise<void> => {
     try {
-        
-        const id = req.params.id as string; 
+        const id = req.params.id as string;
         const status = req.body.status as string;
-        const userId = (req as any).user.id as string; 
+        const userId = (req as any).user.id as string;
 
-        // 1. Valid statuses ka check
+        // Validates that the new status is among the allowed lifecycle states
         const validStatuses = ['open', 'in_progress', 'resolved', 'ignored'];
         if (!validStatuses.includes(status)) {
             res.status(400).json({ success: false, message: "Invalid status value" });
             return;
         }
 
-        
+        // Retrieves the incident and its associated project to verify ownership
         const incident = await prisma.incident.findUnique({
             where: { id }
         });
@@ -231,7 +227,6 @@ export const updateIncidentStatus = async (req: Request, res: Response): Promise
             return;
         }
 
-        // 🚀 FIX 2: Project ko alag se fetch karo incident.projectId use karke
         const project = await prisma.project.findUnique({
             where: { id: incident.projectId }
         });
@@ -241,7 +236,7 @@ export const updateIncidentStatus = async (req: Request, res: Response): Promise
             return;
         }
 
-        // 3. RBAC Check: Kya yeh user is Organization ka member hai?
+        // Conducts a Role-Based Access Control check to ensure the user belongs to the parent organization
         const membership = await prisma.organizationMember.findUnique({
             where: {
                 userId_organizationId: {
@@ -256,7 +251,7 @@ export const updateIncidentStatus = async (req: Request, res: Response): Promise
             return;
         }
 
-        // 4. Update the Database
+        // Finalizes the update to the incident's status in the relational database
         const updatedIncident = await prisma.incident.update({
             where: { id },
             data: { status }

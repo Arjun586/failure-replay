@@ -1,6 +1,7 @@
 {
   "name": "replayos-root",
   "private": true,
+  
   "workspaces": [
     "packages/*"
   ],
