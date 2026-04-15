@@ -60,7 +60,7 @@ export default function Sidebar() {
             {/* 1. BRANDING */}
             <div className="p-4 relative">
                 
-                <Link to="/" className="flex items-center gap-3 px-2 mb-6 mt-2">
+                <Link to="/dashboard" className="flex items-center gap-3 px-2 mb-6 mt-2">
                     <div className="w-8 h-8 rounded-lg brand-logo">
                         <Activity size={18} />
                     </div>
