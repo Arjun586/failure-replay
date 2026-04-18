@@ -12,7 +12,7 @@ const connection = new IORedis(process.env.REDIS_URL!, {
 export const logQueue = new Queue('log-processing', { connection });
 
 // 3. Create the Worker (The "Processor")
-const logWorker = new Worker('log-processing', async (job) => {
+export const logWorker = new Worker('log-processing', async (job) => {
     const { filePath, originalName, projectId } = job.data;
     
     console.log(`[Worker] 🚀 Processing logs for: ${originalName}`);
@@ -21,7 +21,9 @@ const logWorker = new Worker('log-processing', async (job) => {
     await parseLogFile(filePath, originalName, projectId);
     
     return { status: 'completed' };
-}, { connection });
+}, { connection ,
+    concurrency: 5 // Process up to 5 logs at the same time
+});
 
 logWorker.on('completed', (job) => console.log(`Job ${job.id} finished!`));
 logWorker.on('failed', (job, err) => console.error(`Job ${job?.id} failed:`, err));

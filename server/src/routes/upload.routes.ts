@@ -36,13 +36,22 @@ router.post('/', authenticateUser, upload.single('logfile'), async (req, res) =>
             return;
         }
 
-        
+
         // User waits 0.1 seconds, parsing happens in background
         await logQueue.add('process-logs', {
         filePath: req.file.path,
         originalName: req.file.originalname,
         projectId: projectId
-        });
+        }, {
+        // Prevent Redis Memory Leaks
+        removeOnComplete: true, // Auto-delete job data when done
+        removeOnFail: { count: 100 }, // Keep the last 100 failed jobs for debugging
+        attempts: 3, // Retry failed jobs up to 3 times
+        backoff: {
+            type: 'exponential',
+            delay: 5000 // Wait 5s, then 10s, then 20s between retries
+        }
+    });
 
         res.status(202).json({ 
         success: true, 

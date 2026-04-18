@@ -1,5 +1,6 @@
 // server/src/lib/prisma.ts
 import { PrismaClient } from '@prisma/client';
+import { logWorker } from '../workers/log.worker';
 
 // Retrieves the database connection string from environment variables
 const dbUrl = process.env.DATABASE_URL || '';
@@ -19,6 +20,10 @@ export const prisma = new PrismaClient({
 
 // Ensures the database connection is closed gracefully when the process terminates
 process.on('SIGINT', async () => {
+    console.log('Shutting down gracefully...');
+    //Tell the worker to stop taking new jobs and finish active ones
+    await logWorker.close();
+    // Disconnect DB
     await prisma.$disconnect();
     process.exit(0);
 });
