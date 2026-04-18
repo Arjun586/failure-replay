@@ -3,6 +3,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { parseLogFile } from "../services/parser.service"
 import { authenticateUser } from '../middleware/auth.middleware';
+import { logQueue } from '../workers/log.worker';
 
 // Initializes the Express router for log file ingestion
 const router = Router();
@@ -35,13 +36,17 @@ router.post('/', authenticateUser, upload.single('logfile'), async (req, res) =>
             return;
         }
 
-        // Hands off the saved file to the parsing service to reconstruct incidents
-        const newIncident = await parseLogFile(req.file.path, req.file.originalname, projectId);
         
-        res.status(200).json({
-            success: true,
-            message: 'File parsed and incident created!',
-            data: newIncident
+        // User waits 0.1 seconds, parsing happens in background
+        await logQueue.add('process-logs', {
+        filePath: req.file.path,
+        originalName: req.file.originalname,
+        projectId: projectId
+        });
+
+        res.status(202).json({ 
+        success: true, 
+        message: "Logs are being processed in the background!" 
         });
     } catch (error) {
         // Log errors and notify the client if the parsing pipeline fails

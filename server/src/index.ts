@@ -2,6 +2,7 @@
 import dotenv from 'dotenv';
 // Loads environment variables from a .env file into process.env 
 dotenv.config();
+import './workers/log.worker';
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
