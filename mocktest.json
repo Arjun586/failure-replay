@@ -1,0 +1,51 @@
+[
+  {
+    "timestamp": "2026-04-20T14:30:00.100Z",
+    "level": "INFO",
+    "message": "Incoming POST /api/checkout",
+    "service": "api-gateway",
+    "correlationId": "txn-9948"
+  },
+  {
+    "timestamp": "2026-04-20T14:30:00.150Z",
+    "level": "INFO",
+    "message": "User session validated successfully.",
+    "service": "auth-service",
+    "correlationId": "txn-9948"
+  },
+  {
+    "timestamp": "2026-04-20T14:30:00.220Z",
+    "level": "INFO",
+    "message": "Initiating payment sequence for order #5512",
+    "service": "order-orchestrator",
+    "correlationId": "txn-9948"
+  },
+  {
+    "timestamp": "2026-04-20T14:30:00.250Z",
+    "level": "INFO",
+    "message": "Connecting to Stripe API...",
+    "service": "payment-service",
+    "correlationId": "txn-9948"
+  },
+  {
+    "timestamp": "2026-04-20T14:30:15.000Z",
+    "level": "ERROR",
+    "message": "Payment Gateway Timeout after 15000ms",
+    "service": "payment-service",
+    "correlationId": "txn-9948"
+  },
+  {
+    "timestamp": "2026-04-20T14:30:15.050Z",
+    "level": "CRITICAL",
+    "message": "Checkout Saga Failed. Rolling back inventory for order #5512",
+    "service": "order-orchestrator",
+    "correlationId": "txn-9948"
+  },
+  {
+    "timestamp": "2026-04-20T14:30:15.100Z",
+    "level": "INFO",
+    "message": "Inventory successfully unlocked.",
+    "service": "inventory-service",
+    "correlationId": "txn-9948"
+  }
+]
