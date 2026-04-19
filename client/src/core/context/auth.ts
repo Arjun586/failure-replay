@@ -25,12 +25,12 @@ export interface Project {
 
 // Defines the global state and methods available for authentication management
 export interface AuthContextType {
-    token: string | null;
+
     user: User | null;
     activeOrganization: Organization | null;
     activeProject: Project | null;
     setActiveProject: (project: Project) => void;    
-    login: (token: string, user: User, organizations: Organization[]) => void;
+    login: (user: User, organizations: Organization[]) => void;
     logout: () => void;
     isAuthenticated: boolean;
 }

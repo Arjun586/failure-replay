@@ -80,8 +80,23 @@ const findBestSpanForLog = async (
 export const parseLogFile = async (filePath: string, originalName: string, projectId: string) => {
     // Reads the entire file content into memory as a UTF-8 string
     const fileContent = await fs.promises.readFile(filePath, "utf-8");
-    // Parses the raw file content into an array of log objects
-    const logs: any[] = JSON.parse(fileContent); 
+    
+    // Declares the logs array variable to be populated safely
+    let logs: any[];
+    
+    try {
+        // Parses the raw file content into an array of log objects
+        logs = JSON.parse(fileContent); 
+    } catch (parseError) {
+        // Logs the error and throws a specific format error to prevent infinite BullMQ retries
+        console.error(`[Parser] FATAL: File ${originalName} contains invalid JSON.`);
+        throw new Error("INVALID_JSON_FORMAT"); 
+    }
+
+    // Ensures the parsed output is actually an array before proceeding
+    if (!Array.isArray(logs)) {
+        throw new Error("LOG_FILE_NOT_ARRAY");
+    }
 
     // Scans the log set once to find the first critical error to define the incident's metadata
     const firstError = logs.find(l => ["ERROR", "CRITICAL"].includes(l.level?.toUpperCase()));

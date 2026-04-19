@@ -131,13 +131,15 @@ export const getIncidents = async (req: Request, res: Response): Promise<void> =
 export const getIncidentTimeline = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
+        // Extracts the authenticated user's ID from the request object (populated by your auth middleware)
+        const userId = (req as any).user.id;
 
         if (!id || typeof id !== 'string') {
             res.status(400).json({ success: false, message: 'Invalid incident ID format' });
             return;
         }
 
-        // Retrieves incident details including nested traces and spans for comprehensive visibility
+        // Retrieves incident details including nested traces, spans, and organization membership validation
         const incident = await prisma.incident.findUnique({
             where: { id },
             include: {
@@ -148,12 +150,20 @@ export const getIncidentTimeline = async (req: Request, res: Response): Promise<
                         span: true
                     }
                 },
-                project: true
+                project: {
+                    include: {
+                        organization: {
+                            // Only returns member records if the authenticated user belongs to this organization
+                            include: { members: { where: { userId } } } 
+                        }
+                    }
+                }
             }
         });
 
-        if (!incident) {
-            res.status(404).json({ success: false, message: 'Incident not found' });
+        // Rejects access if the incident doesn't exist or the user is not a member of the owning organization
+        if (!incident || incident.project?.organization?.members.length === 0) {
+            res.status(403).json({ success: false, message: 'Access denied to this incident' });
             return;
         }
 

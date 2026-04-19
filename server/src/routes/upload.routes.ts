@@ -13,13 +13,16 @@ if (!fs.existsSync('uploads')) {
 
 // Configures local disk storage for temporary retention of uploaded log files
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'), 
-    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`), 
+    destination: (req, file, cb) => cb(null, 'uploads/'),
+    filename: (req, file, cb) => {
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+        cb(null, `${Date.now()}-${safeName}`);
+    },
 });
 
 // Initializes the Multer middleware with a file size limit and the correct storage engine 
 const upload = multer({
-    storage: storage, // FIXED: You must pass the 'storage' configuration here
+    storage: storage, // You must pass the 'storage' configuration here
     limits: { fileSize: 150 * 1024 * 1024 } // Increased to 150MB to handle large logs safely
 });
 

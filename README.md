@@ -49,6 +49,34 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 * **PostgreSQL (Hosted on Supabase):** Chosen over NoSQL because incident tracking requires strict relational data (Organization → Projects → Incidents → Events).
 * **Prisma ORM:** Provides type-safe database queries and automated migrations, eliminating raw SQL string errors.
 
+
+---
+
+```
+┌──────────────┐      1. Upload      ┌──────────────┐      4. 202 Accepted
+│ React Client │────────────────────>│ Express API  │<────────────────────┐
+└──────────────┘                     └──────┬───────┘                     │
+       ^                                    │                             │
+       │                                    │ 2. Save File                │
+       │                                    V                             │
+       │                            ┌──────────────┐              (Non-blocking)
+       │                            │  Local Disk  │                      │
+       │                            └──────┬───────┘                      │
+       │                                   │                              │
+       │                                   │ 6. Read/Delete               │
+       │                                   V                              │
+       │      3. Queue Job          ┌──────────────┐              ┌───────┴──────┐
+       └───────────────────────────>│ Redis (Jobs) │<─────────────┤ BullMQ Worker│
+                                    └──────────────┘    5. Pull   └───────┬──────┘
+                                                                          │
+                                                                          │ 7. Bulk Insert
+                                                                          V
+                                                                  ┌──────────────┐
+                                                                  │  PostgreSQL  │
+                                                                  └──────────────┘
+
+```
+
 ---
 
 ## 📍 Current Progress (Save State)
@@ -106,19 +134,8 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 - [x] **Background Workers:** Move the `parseLogFile` service out of the Express request cycle and into a Redis-backed BullMQ worker queue to handle 100MB+ files without blocking the API.
 
 
-## 🗺️ Roadmap & Future Scope
-
-This project is continually evolving from a single-user MVP into a fully-fledged enterprise SaaS product. Here is the exact roadmap for upcoming features and architectural upgrades:
 
 
-### Phase 5: Enterprise Scalability
-
-- [ ] **S3 Object Storage:** Migrate raw log file storage from the local disk to an S3-compatible cloud bucket (e.g., AWS S3 or Cloudflare R2).
-- [ ] **Full-Text Search:** Implement PostgreSQL `tsvector` indexing or Elasticsearch for rapid log querying across millions of events.
-
-### Phase 6: Automated Intelligence
-- [ ] **Incident Clustering:** Use error signature hashes (service + route + status) to group similar incoming logs into existing incidents, preventing alert fatigue.
-- [ ] **AI-Assisted Root Cause Analysis:** Integrate an LLM (via OpenAI/Anthropic API) to analyze raw log arrays and suggest probable root cause hypotheses inside the postmortem modal.
 
 
 ---
@@ -130,6 +147,33 @@ This project is continually evolving from a single-user MVP into a fully-fledged
 git clone https://github.com/Arjun586/ReplayOS.git
 cd ReplayOS
 ```
+
+
+**2. Environment Configuration**
+To run this project, you will need to add the following environment variables to a .env file located in the /server directory. A template file .env.example is provided in the repository for reference.
+
+
+```
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# Authentication
+# A secret string used to sign secure HttpOnly JWT cookies
+JWT_SECRET=your_long_random_secret_string
+
+# Database (PostgreSQL)
+# Connection string for your primary PostgreSQL instance
+DATABASE_URL="postgresql://user:password@localhost:5432/replayos?schema=public"
+
+# Queue Processing (Redis)
+# Required for BullMQ background workers. 
+# For Windows, an Upstash (serverless) Redis URL is recommended.
+REDIS_URL=rediss://default:your_password@your_endpoint.upstash.io:6379
+```
+
+
+
 
 **2. Start the Backend API**
 ```bash
@@ -149,3 +193,21 @@ From the root `ReplayOS` folder, run both the API and UI at the same time:
 ```bash
 npm run dev
 ```
+
+
+## 🗺️ Roadmap & Future Scope
+
+This project is continually evolving from a single-user MVP into a fully-fledged enterprise SaaS product. Here is the exact roadmap for upcoming features and architectural upgrades:
+
+
+### Phase 5: Enterprise Scalability
+
+- [ ] **S3 Object Storage:** Migrate raw log file storage from the local disk to an S3-compatible cloud bucket (e.g., AWS S3 or Cloudflare R2).
+- [ ] **Full-Text Search:** Implement PostgreSQL `tsvector` indexing or Elasticsearch for rapid log querying across millions of events.
+
+### Phase 6: Automated Intelligence
+- [ ] **Incident Clustering:** Use error signature hashes (service + route + status) to group similar incoming logs into existing incidents, preventing alert fatigue.
+- [ ] **AI-Assisted Root Cause Analysis:** Integrate an LLM (via OpenAI/Anthropic API) to analyze raw log arrays and suggest probable root cause hypotheses inside the postmortem modal.
+
+
+

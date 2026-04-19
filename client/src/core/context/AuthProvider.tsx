@@ -5,9 +5,6 @@ import type { User, Organization, Project } from './auth';
 
 // Manages global authentication state, user session, and multi-tenant context
 export default function AuthProvider({ children }: { children: ReactNode }) {
-    // Initializes session token from browser local storage
-    const [token, setToken] = useState<string | null>(localStorage.getItem('jwt_token'));
-
     // Loads persisted user profile data from storage or defaults to null
     const [user, setUser] = useState<User | null>(() => {
         const saved = localStorage.getItem('user');
@@ -33,40 +30,41 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // Processes user login by establishing session state and persisting credentials
-    const login = (newToken: string, userData: User, organizations: Organization[]) => {
+    // Removed the 'newToken' string parameter since the server handles the secure cookie
+    const login = (userData: User, organizations: Organization[]) => { 
         const primaryOrg = organizations[0];
-        setToken(newToken);
         setUser(userData);
         setActiveOrganization(primaryOrg);
         setActiveProjectState(null);
         localStorage.removeItem('activeProject');
-        localStorage.setItem('jwt_token', newToken);
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('active_org', JSON.stringify(primaryOrg));
+        // Sets a simple boolean flag in storage to indicate an active session exists
+        localStorage.setItem('is_logged_in', 'true'); 
     };
 
     // Terminates the session by clearing all sensitive data from state and storage
     const logout = () => {
-        setToken(null);
         setUser(null);
         setActiveOrganization(null);
         setActiveProjectState(null);
-        localStorage.removeItem('jwt_token');
         localStorage.removeItem('user');
         localStorage.removeItem('active_org');
         localStorage.removeItem('activeProject');
+        // Clears the session boolean flag from storage
+        localStorage.removeItem('is_logged_in'); 
     };
 
     return (
         <AuthContext.Provider value={{
-            token,
             user,
             activeOrganization,
             activeProject,         
             setActiveProject,      
             login,
             logout,
-            isAuthenticated: !!token
+            // Derives authentication status directly from the presence of a user profile
+            isAuthenticated: !!user 
         }}>
             {children}
         </AuthContext.Provider>

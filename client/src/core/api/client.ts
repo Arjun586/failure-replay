@@ -12,23 +12,7 @@ export const apiClient: AxiosInstance = axios.create({
     },
 });
 
-// Interceptor to inject the JWT authorization token into every outgoing request
-apiClient.interceptors.request.use(
-    (config) => {
-        // Retrieves the current session token from local storage
-        const token = localStorage.getItem('jwt_token');
-        
-        // Appends the token to the Authorization header if it exists 
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
+
 
 // Interceptor to handle global 401 Unauthorized errors and session expiration
 apiClient.interceptors.response.use(
