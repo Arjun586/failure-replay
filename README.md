@@ -103,7 +103,7 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 - [x] **Create Package:**: Create a ReplayOS for user to use ReplayOS
 - [x] **Update Instrument SDK:** Update instrument SDK for user to connect with ReplayOS withour too much hardship
 - [x] **Fix Live Feed**: Keep Live Feed intact even after move to other routes
-
+- [x] **Background Workers:** Move the `parseLogFile` service out of the Express request cycle and into a Redis-backed BullMQ worker queue to handle 100MB+ files without blocking the API.
 
 
 ## 🗺️ Roadmap & Future Scope
@@ -111,13 +111,8 @@ A hybrid storage approach optimized for both structured relationships and raw fi
 This project is continually evolving from a single-user MVP into a fully-fledged enterprise SaaS product. Here is the exact roadmap for upcoming features and architectural upgrades:
 
 
-### Must Do before Phase 5
-
-- [ ] **Live Working:** Check if All this is working with Live Project
-
-
 ### Phase 5: Enterprise Scalability
-- [ ] **Background Workers:** Move the `parseLogFile` service out of the Express request cycle and into a Redis-backed BullMQ worker queue to handle 100MB+ files without blocking the API.
+
 - [ ] **S3 Object Storage:** Migrate raw log file storage from the local disk to an S3-compatible cloud bucket (e.g., AWS S3 or Cloudflare R2).
 - [ ] **Full-Text Search:** Implement PostgreSQL `tsvector` indexing or Elasticsearch for rapid log querying across millions of events.
 
