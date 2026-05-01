@@ -43,7 +43,7 @@ export function useIncidents(projectId: string | undefined, searchParams?: URLSe
             try {
                 if (showLoadingState) setIsLoading(true);
                 setError(null);
-          
+
                 // Synchronizes provided search parameters with the required project context
                 const params = new URLSearchParams(searchParams?.toString() || '');
                 params.set('projectId', projectId); 
